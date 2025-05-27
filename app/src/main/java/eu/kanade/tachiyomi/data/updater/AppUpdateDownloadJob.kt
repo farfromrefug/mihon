@@ -72,7 +72,12 @@ class AppUpdateDownloadJob(private val context: Context, workerParams: WorkerPar
      */
     private suspend fun downloadApk(title: String, url: String) {
         // Show notification download starting.
-        notifier.onDownloadStarted(title)
+        with(notifier) {
+            onDownloadStarted(title)
+                // KMK -->
+                .show()
+            // KMK <--
+        }
 
         val progressListener = object : ProgressListener {
             // Progress of the download
