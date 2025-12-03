@@ -892,6 +892,8 @@ private fun onChapterItemClick(
  * Renders chapter items in a grid layout within a LazyListScope.
  * Uses a chunked approach to display grid items within LazyColumn items.
  */
+private const val DEFAULT_CHAPTER_GRID_COLUMNS = 3
+
 private fun LazyListScope.sharedChapterGridItems(
     manga: Manga,
     chapters: List<ChapterList>,
@@ -905,8 +907,8 @@ private fun LazyListScope.sharedChapterGridItems(
     // Filter only chapter items (skip MissingCount for grid view)
     val chapterItems = chapters.filterIsInstance<ChapterList.Item>()
     
-    // Calculate actual columns based on configuration (0 = auto = 3 columns default)
-    val actualColumns = if (columns <= 0) 3 else columns
+    // Calculate actual columns based on configuration (0 = auto)
+    val actualColumns = if (columns <= 0) DEFAULT_CHAPTER_GRID_COLUMNS else columns
     
     // Chunk chapters into rows
     val chunkedChapters = chapterItems.chunked(actualColumns)
@@ -1017,7 +1019,8 @@ private fun LazyListScope.sharedChapterGridItems(
                                 readProgress = readProgress,
                             )
                         }
-                        else -> { /* List mode handled by sharedChapterItems */ }
+                        // List mode is handled by sharedChapterItems, this branch should not be reached
+                        ChapterDisplayMode.List -> Unit
                     }
                 }
             }
