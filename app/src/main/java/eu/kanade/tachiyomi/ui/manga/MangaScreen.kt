@@ -98,11 +98,11 @@ class MangaScreen(
         }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
-        val chapterDisplayMode by screenModel.chapterDisplayMode.collectAsState()
-        val chapterGridColumns by if (isLandscape) {
-            screenModel.chapterGridLandscapeColumns.collectAsState()
+        val chapterDisplayMode = screenModel.chapterDisplayMode.get()
+        val chapterGridColumns = if (isLandscape) {
+            screenModel.chapterGridLandscapeColumns.get()
         } else {
-            screenModel.chapterGridPortraitColumns.collectAsState()
+            screenModel.chapterGridPortraitColumns.get()
         }
 
         if (state is MangaScreenModel.State.Loading) {
@@ -235,11 +235,11 @@ class MangaScreen(
             MangaScreenModel.Dialog.SettingsSheet -> {
                 val configuration = LocalConfiguration.current
                 val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-                val chapterDisplayMode by screenModel.chapterDisplayMode.collectAsState()
-                val chapterGridColumns by if (isLandscape) {
-                    screenModel.chapterGridLandscapeColumns.collectAsState()
+                val chapterDisplayMode = screenModel.chapterDisplayMode.get()
+                val chapterGridColumns = if (isLandscape) {
+                    screenModel.chapterGridLandscapeColumns.get()
                 } else {
-                    screenModel.chapterGridPortraitColumns.collectAsState()
+                    screenModel.chapterGridPortraitColumns.get()
                 }
                 ChapterSettingsDialog(
                     onDismissRequest = onDismissRequest,
