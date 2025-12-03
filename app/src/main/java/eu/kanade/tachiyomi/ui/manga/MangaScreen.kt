@@ -91,11 +91,19 @@ class MangaScreen(
         val haptic = LocalHapticFeedback.current
         val scope = rememberCoroutineScope()
         val lifecycleOwner = LocalLifecycleOwner.current
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val screenModel = rememberScreenModel {
             MangaScreenModel(context, lifecycleOwner.lifecycle, mangaId, fromSource)
         }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
+        val chapterDisplayMode by screenModel.chapterDisplayMode.collectAsState()
+        val chapterGridColumns by if (isLandscape) {
+            screenModel.chapterGridLandscapeColumns.collectAsState()
+        } else {
+            screenModel.chapterGridPortraitColumns.collectAsState()
+        }
 
         if (state is MangaScreenModel.State.Loading) {
             LoadingScreen()
@@ -124,6 +132,8 @@ class MangaScreen(
             isTabletUi = isTabletUi(),
             chapterSwipeStartAction = screenModel.chapterSwipeStartAction,
             chapterSwipeEndAction = screenModel.chapterSwipeEndAction,
+            chapterDisplayMode = chapterDisplayMode,
+            chapterGridColumns = chapterGridColumns,
             navigateUp = navigator::pop,
             onChapterClicked = { openChapter(context, it) },
             onDownloadChapter = screenModel::runChapterDownloadActions.takeIf { !successState.source.isLocalOrStub() },

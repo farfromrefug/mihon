@@ -1,10 +1,12 @@
 package eu.kanade.presentation.manga
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,12 +16,18 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -40,14 +48,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
 import eu.kanade.presentation.components.relativeDateText
+import eu.kanade.presentation.manga.components.ChapterCompactGridItem
+import eu.kanade.presentation.manga.components.ChapterComfortableGridItem
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.manga.components.ChapterHeader
 import eu.kanade.presentation.manga.components.ExpandableMangaDescription
@@ -64,9 +76,11 @@ import eu.kanade.tachiyomi.ui.manga.ChapterList
 import eu.kanade.tachiyomi.ui.manga.MangaScreenModel
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.chapter.model.ChapterDisplayMode
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.TwoPanelBox
@@ -87,6 +101,8 @@ fun MangaScreen(
     isTabletUi: Boolean,
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
+    chapterDisplayMode: ChapterDisplayMode = ChapterDisplayMode.List,
+    chapterGridColumns: Int = 0,
     navigateUp: () -> Unit,
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
@@ -142,6 +158,8 @@ fun MangaScreen(
             nextUpdate = nextUpdate,
             chapterSwipeStartAction = chapterSwipeStartAction,
             chapterSwipeEndAction = chapterSwipeEndAction,
+            chapterDisplayMode = chapterDisplayMode,
+            chapterGridColumns = chapterGridColumns,
             navigateUp = navigateUp,
             onChapterClicked = onChapterClicked,
             onDownloadChapter = onDownloadChapter,
@@ -177,6 +195,8 @@ fun MangaScreen(
             snackbarHostState = snackbarHostState,
             chapterSwipeStartAction = chapterSwipeStartAction,
             chapterSwipeEndAction = chapterSwipeEndAction,
+            chapterDisplayMode = chapterDisplayMode,
+            chapterGridColumns = chapterGridColumns,
             nextUpdate = nextUpdate,
             navigateUp = navigateUp,
             onChapterClicked = onChapterClicked,
@@ -217,6 +237,8 @@ private fun MangaScreenSmallImpl(
     nextUpdate: Instant?,
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
+    chapterDisplayMode: ChapterDisplayMode,
+    chapterGridColumns: Int,
     navigateUp: () -> Unit,
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
@@ -260,6 +282,7 @@ private fun MangaScreenSmallImpl(
     onInvertSelection: () -> Unit,
 ) {
     val chapterListState = rememberLazyListState()
+    val chapterGridState = rememberLazyGridState()
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
@@ -437,17 +460,33 @@ private fun MangaScreenSmallImpl(
                         )
                     }
 
-                    sharedChapterItems(
-                        manga = state.manga,
-                        chapters = listItem,
-                        isAnyChapterSelected = chapters.fastAny { it.selected },
-                        chapterSwipeStartAction = chapterSwipeStartAction,
-                        chapterSwipeEndAction = chapterSwipeEndAction,
-                        onChapterClicked = onChapterClicked,
-                        onDownloadChapter = onDownloadChapter,
-                        onChapterSelected = onChapterSelected,
-                        onChapterSwipe = onChapterSwipe,
-                    )
+                    when (chapterDisplayMode) {
+                        ChapterDisplayMode.List -> {
+                            sharedChapterItems(
+                                manga = state.manga,
+                                chapters = listItem,
+                                isAnyChapterSelected = chapters.fastAny { it.selected },
+                                chapterSwipeStartAction = chapterSwipeStartAction,
+                                chapterSwipeEndAction = chapterSwipeEndAction,
+                                onChapterClicked = onChapterClicked,
+                                onDownloadChapter = onDownloadChapter,
+                                onChapterSelected = onChapterSelected,
+                                onChapterSwipe = onChapterSwipe,
+                            )
+                        }
+                        ChapterDisplayMode.CompactGrid, ChapterDisplayMode.ComfortableGrid -> {
+                            sharedChapterGridItems(
+                                manga = state.manga,
+                                chapters = listItem,
+                                isAnyChapterSelected = chapters.fastAny { it.selected },
+                                chapterDisplayMode = chapterDisplayMode,
+                                columns = chapterGridColumns,
+                                onChapterClicked = onChapterClicked,
+                                onDownloadChapter = onDownloadChapter,
+                                onChapterSelected = onChapterSelected,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -461,6 +500,8 @@ fun MangaScreenLargeImpl(
     nextUpdate: Instant?,
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
+    chapterDisplayMode: ChapterDisplayMode,
+    chapterGridColumns: Int,
     navigateUp: () -> Unit,
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
@@ -676,17 +717,33 @@ fun MangaScreenLargeImpl(
                                 )
                             }
 
-                            sharedChapterItems(
-                                manga = state.manga,
-                                chapters = listItem,
-                                isAnyChapterSelected = chapters.fastAny { it.selected },
-                                chapterSwipeStartAction = chapterSwipeStartAction,
-                                chapterSwipeEndAction = chapterSwipeEndAction,
-                                onChapterClicked = onChapterClicked,
-                                onDownloadChapter = onDownloadChapter,
-                                onChapterSelected = onChapterSelected,
-                                onChapterSwipe = onChapterSwipe,
-                            )
+                            when (chapterDisplayMode) {
+                                ChapterDisplayMode.List -> {
+                                    sharedChapterItems(
+                                        manga = state.manga,
+                                        chapters = listItem,
+                                        isAnyChapterSelected = chapters.fastAny { it.selected },
+                                        chapterSwipeStartAction = chapterSwipeStartAction,
+                                        chapterSwipeEndAction = chapterSwipeEndAction,
+                                        onChapterClicked = onChapterClicked,
+                                        onDownloadChapter = onDownloadChapter,
+                                        onChapterSelected = onChapterSelected,
+                                        onChapterSwipe = onChapterSwipe,
+                                    )
+                                }
+                                ChapterDisplayMode.CompactGrid, ChapterDisplayMode.ComfortableGrid -> {
+                                    sharedChapterGridItems(
+                                        manga = state.manga,
+                                        chapters = listItem,
+                                        isAnyChapterSelected = chapters.fastAny { it.selected },
+                                        chapterDisplayMode = chapterDisplayMode,
+                                        columns = chapterGridColumns,
+                                        onChapterClicked = onChapterClicked,
+                                        onDownloadChapter = onDownloadChapter,
+                                        onChapterSelected = onChapterSelected,
+                                    )
+                                }
+                            }
                         }
                     }
                 },
@@ -828,5 +885,146 @@ private fun onChapterItemClick(
         chapterItem.selected -> onToggleSelection(false)
         isAnyChapterSelected -> onToggleSelection(true)
         else -> onChapterClicked(chapterItem.chapter)
+    }
+}
+
+/**
+ * Renders chapter items in a grid layout within a LazyListScope.
+ * Uses a chunked approach to display grid items within LazyColumn items.
+ */
+private fun LazyListScope.sharedChapterGridItems(
+    manga: Manga,
+    chapters: List<ChapterList>,
+    isAnyChapterSelected: Boolean,
+    chapterDisplayMode: ChapterDisplayMode,
+    columns: Int,
+    onChapterClicked: (Chapter) -> Unit,
+    onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
+    onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
+) {
+    // Filter only chapter items (skip MissingCount for grid view)
+    val chapterItems = chapters.filterIsInstance<ChapterList.Item>()
+    
+    // Calculate actual columns based on configuration (0 = auto = 3 columns default)
+    val actualColumns = if (columns <= 0) 3 else columns
+    
+    // Chunk chapters into rows
+    val chunkedChapters = chapterItems.chunked(actualColumns)
+    
+    items(
+        items = chunkedChapters,
+        key = { row -> "grid-row-${row.firstOrNull()?.id ?: 0}" },
+        contentType = { MangaScreenItem.CHAPTER },
+    ) { row ->
+        val haptic = LocalHapticFeedback.current
+        
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            row.forEach { item ->
+                val coverData = MangaCover(
+                    mangaId = manga.id,
+                    sourceId = manga.source,
+                    isMangaFavorite = manga.favorite,
+                    url = manga.thumbnailUrl,
+                    lastModified = manga.coverLastModified,
+                )
+                
+                val chapterTitle = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
+                    stringResource(
+                        MR.strings.display_mode_chapter,
+                        formatChapterNumber(item.chapter.chapterNumber),
+                    )
+                } else {
+                    item.chapter.name
+                }
+                
+                val readProgress = item.chapter.lastPageRead
+                    .takeIf { !item.chapter.read && it > 0L }
+                    ?.let {
+                        stringResource(
+                            MR.strings.chapter_progress,
+                            it + 1,
+                        )
+                    }
+                
+                Box(
+                    modifier = Modifier.weight(1f),
+                ) {
+                    when (chapterDisplayMode) {
+                        ChapterDisplayMode.CompactGrid -> {
+                            ChapterCompactGridItem(
+                                title = chapterTitle,
+                                coverData = coverData,
+                                read = item.chapter.read,
+                                bookmark = item.chapter.bookmark,
+                                selected = item.selected,
+                                downloadIndicatorEnabled = !isAnyChapterSelected && !manga.isLocal(),
+                                downloadStateProvider = { item.downloadState },
+                                downloadProgressProvider = { item.downloadProgress },
+                                onClick = {
+                                    onChapterItemClick(
+                                        chapterItem = item,
+                                        isAnyChapterSelected = isAnyChapterSelected,
+                                        onToggleSelection = { onChapterSelected(item, !item.selected, true, false) },
+                                        onChapterClicked = onChapterClicked,
+                                    )
+                                },
+                                onLongClick = {
+                                    onChapterSelected(item, !item.selected, true, true)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onDownloadClick = if (onDownloadChapter != null) {
+                                    { onDownloadChapter(listOf(item), it) }
+                                } else {
+                                    null
+                                },
+                                date = relativeDateText(item.chapter.dateUpload),
+                                readProgress = readProgress,
+                            )
+                        }
+                        ChapterDisplayMode.ComfortableGrid -> {
+                            ChapterComfortableGridItem(
+                                title = chapterTitle,
+                                coverData = coverData,
+                                read = item.chapter.read,
+                                bookmark = item.chapter.bookmark,
+                                selected = item.selected,
+                                downloadIndicatorEnabled = !isAnyChapterSelected && !manga.isLocal(),
+                                downloadStateProvider = { item.downloadState },
+                                downloadProgressProvider = { item.downloadProgress },
+                                onClick = {
+                                    onChapterItemClick(
+                                        chapterItem = item,
+                                        isAnyChapterSelected = isAnyChapterSelected,
+                                        onToggleSelection = { onChapterSelected(item, !item.selected, true, false) },
+                                        onChapterClicked = onChapterClicked,
+                                    )
+                                },
+                                onLongClick = {
+                                    onChapterSelected(item, !item.selected, true, true)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onDownloadClick = if (onDownloadChapter != null) {
+                                    { onDownloadChapter(listOf(item), it) }
+                                } else {
+                                    null
+                                },
+                                date = relativeDateText(item.chapter.dateUpload),
+                                readProgress = readProgress,
+                            )
+                        }
+                        else -> { /* List mode handled by sharedChapterItems */ }
+                    }
+                }
+            }
+            // Fill remaining space if row is not complete
+            repeat(actualColumns - row.size) {
+                Box(modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
