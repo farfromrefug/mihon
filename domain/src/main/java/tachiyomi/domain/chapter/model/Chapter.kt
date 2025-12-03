@@ -15,6 +15,7 @@ data class Chapter(
     val scanlator: String?,
     val lastModifiedAt: Long,
     val version: Long,
+    val coverUrl: String? = null,
 ) {
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f
@@ -26,6 +27,7 @@ data class Chapter(
             dateUpload = other.dateUpload,
             chapterNumber = other.chapterNumber,
             scanlator = other.scanlator?.ifBlank { null },
+            coverUrl = other.coverUrl,
         )
     }
 
@@ -45,6 +47,7 @@ data class Chapter(
             scanlator = null,
             lastModifiedAt = 0,
             version = 1,
+            coverUrl = null,
         )
     }
 }

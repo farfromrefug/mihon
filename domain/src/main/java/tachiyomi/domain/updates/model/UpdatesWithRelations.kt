@@ -15,4 +15,5 @@ data class UpdatesWithRelations(
     val sourceId: Long,
     val dateFetch: Long,
     val coverData: MangaCover,
+    val chapterCoverUrl: String? = null,
 )

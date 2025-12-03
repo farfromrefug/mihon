@@ -62,6 +62,7 @@ class UpdatesRepositoryImpl(
         coverLastModified: Long,
         dateUpload: Long,
         dateFetch: Long,
+        chapterCoverUrl: String?,
     ): UpdatesWithRelations = UpdatesWithRelations(
         mangaId = mangaId,
         mangaTitle = mangaTitle,
@@ -81,5 +82,6 @@ class UpdatesRepositoryImpl(
             url = thumbnailUrl,
             lastModified = coverLastModified,
         ),
+        chapterCoverUrl = chapterCoverUrl,
     )
 }

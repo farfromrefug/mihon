@@ -1,0 +1,2 @@
+-- Add cover_url column for per-chapter covers
+ALTER TABLE chapters ADD COLUMN cover_url TEXT;
