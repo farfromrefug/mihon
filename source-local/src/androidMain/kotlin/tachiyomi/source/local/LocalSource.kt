@@ -256,6 +256,7 @@ actual class LocalSource(
 
     // Chapters
     override suspend fun getChapterList(manga: SManga): List<SChapter> = withIOContext {
+        val mangaDir = fileSystem.getMangaDirectory(manga.url)
         val chapters = fileSystem.getFilesInMangaDirectory(manga.url)
             // Only keep supported formats
             .filterNot { it.name.orEmpty().startsWith('.') }
@@ -283,6 +284,10 @@ actual class LocalSource(
                             setChapterDetailsFromComicInfoFile(stream, this)
                         }
                     }
+
+                    // Set chapter cover URL
+                    thumbnail_url = findChapterCover(mangaDir, chapterFile)?.uri?.toString()
+                        ?: updateChapterCover(chapterFile, mangaDir)?.uri?.toString()
                 }
             }
             .sortedWith { c1, c2 ->
@@ -357,6 +362,89 @@ actual class LocalSource(
             }
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Error updating cover for ${manga.title}" }
+            null
+        }
+    }
+
+    /**
+     * Finds an existing chapter cover file in the manga directory.
+     * The cover file should be named the same as the chapter file but with .jpg extension.
+     * For example: "Chapter01.cbz" -> "Chapter01.jpg"
+     */
+    private fun findChapterCover(mangaDir: UniFile?, chapterFile: UniFile): UniFile? {
+        if (mangaDir == null) return null
+        val coverName = "${chapterFile.nameWithoutExtension}.jpg"
+        return mangaDir.findFile(coverName)?.takeIf { it.isFile }
+    }
+
+    /**
+     * Extracts the first image from a chapter and saves it as the chapter cover.
+     * The cover file is saved in the manga directory with the same name as the chapter file
+     * but with .jpg extension.
+     */
+    private fun updateChapterCover(chapterFile: UniFile, mangaDir: UniFile?): UniFile? {
+        if (mangaDir == null) return null
+        return try {
+            val format = Format.valueOf(chapterFile)
+            val coverName = "${chapterFile.nameWithoutExtension}.jpg"
+
+            when (format) {
+                is Format.Directory -> {
+                    val entry = format.file.listFiles()
+                        ?.sortedWith { f1, f2 ->
+                            f1.name.orEmpty().compareToCaseInsensitiveNaturalOrder(f2.name.orEmpty())
+                        }
+                        ?.find {
+                            !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() }
+                        }
+
+                    entry?.let { imageFile ->
+                        val coverFile = mangaDir.createFile(coverName) ?: return null
+                        imageFile.openInputStream().use { input ->
+                            coverFile.openOutputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        coverFile
+                    }
+                }
+                is Format.Archive -> {
+                    format.file.archiveReader(context).use { reader ->
+                        val entry = reader.useEntries { entries ->
+                            entries
+                                .sortedWith { f1, f2 -> f1.name.compareToCaseInsensitiveNaturalOrder(f2.name) }
+                                .find { it.isFile && ImageUtil.isImage(it.name) { reader.getInputStream(it.name)!! } }
+                        }
+
+                        entry?.let {
+                            val coverFile = mangaDir.createFile(coverName) ?: return null
+                            reader.getInputStream(it.name)!!.use { input ->
+                                coverFile.openOutputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            coverFile
+                        }
+                    }
+                }
+                is Format.Epub -> {
+                    format.file.epubReader(context).use { epub ->
+                        val entry = epub.getImagesFromPages().firstOrNull()
+
+                        entry?.let {
+                            val coverFile = mangaDir.createFile(coverName) ?: return null
+                            epub.getInputStream(it)!!.use { input ->
+                                coverFile.openOutputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            coverFile
+                        }
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            logcat(LogPriority.ERROR, e) { "Error updating chapter cover for ${chapterFile.name}" }
             null
         }
     }
