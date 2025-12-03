@@ -109,11 +109,14 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
                 .map { mangaInSource ->
                     async {
                         // Process manga within each source in parallel with a per-source semaphore
+                        // Use per-source semaphore first to limit concurrent requests per source
                         val perSourceSemaphore = Semaphore(3)
                         mangaInSource.map { libraryManga ->
                             async {
-                                semaphore.withPermit {
-                                    perSourceSemaphore.withPermit {
+                                // Acquire per-source permit first (limits requests to same source)
+                                perSourceSemaphore.withPermit {
+                                    // Then acquire global permit (limits total concurrent requests)
+                                    semaphore.withPermit {
                                         val manga = libraryManga.manga
                                         ensureActive()
 
