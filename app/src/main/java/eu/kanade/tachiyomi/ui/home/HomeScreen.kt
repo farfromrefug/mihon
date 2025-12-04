@@ -23,6 +23,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -34,6 +35,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.ui.browse.BrowseTab
@@ -71,17 +73,23 @@ object HomeScreen : Screen() {
     @Suppress("ConstPropertyName")
     private const val TabNavigatorKey = "HomeTabs"
 
-    private val TABS = listOf(
-        LibraryTab,
-        UpdatesTab,
-        HistoryTab,
-        BrowseTab,
-        MoreTab,
-    )
-
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val uiPreferences = remember { Injekt.get<UiPreferences>() }
+        val showUpdatesTab = remember { uiPreferences.showUpdatesTab().get() }
+        val showHistoryTab = remember { uiPreferences.showHistoryTab().get() }
+
+        val tabs = remember(showUpdatesTab, showHistoryTab) {
+            buildList {
+                add(LibraryTab)
+                if (showUpdatesTab) add(UpdatesTab)
+                if (showHistoryTab) add(HistoryTab)
+                add(BrowseTab)
+                add(MoreTab)
+            }
+        }
+
         TabNavigator(
             tab = LibraryTab,
             key = TabNavigatorKey,
@@ -92,7 +100,7 @@ object HomeScreen : Screen() {
                     startBar = {
                         if (isTabletUi()) {
                             NavigationRail {
-                                TABS.fastForEach {
+                                tabs.fastForEach {
                                     NavigationRailItem(it)
                                 }
                             }
@@ -109,7 +117,7 @@ object HomeScreen : Screen() {
                                 exit = shrinkVertically(),
                             ) {
                                 NavigationBar {
-                                    TABS.fastForEach {
+                                    tabs.fastForEach {
                                         NavigationBarItem(it)
                                     }
                                 }
@@ -154,8 +162,8 @@ object HomeScreen : Screen() {
                     openTabEvent.receiveAsFlow().collectLatest {
                         tabNavigator.current = when (it) {
                             is Tab.Library -> LibraryTab
-                            Tab.Updates -> UpdatesTab
-                            Tab.History -> HistoryTab
+                            Tab.Updates -> if (showUpdatesTab) UpdatesTab else LibraryTab
+                            Tab.History -> if (showHistoryTab) HistoryTab else LibraryTab
                             is Tab.Browse -> {
                                 if (it.toExtensions) {
                                     BrowseTab.showExtension()

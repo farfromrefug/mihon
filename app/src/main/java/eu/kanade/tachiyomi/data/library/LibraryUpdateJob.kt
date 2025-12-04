@@ -21,6 +21,7 @@ import androidx.work.workDataOf
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.toSManga
+import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.notification.Notifications
@@ -427,8 +428,12 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             prefInterval: Int? = null,
         ) {
             val preferences = Injekt.get<LibraryPreferences>()
+            val uiPreferences = Injekt.get<UiPreferences>()
             val interval = prefInterval ?: preferences.autoUpdateInterval().get()
-            if (interval > 0) {
+            val showUpdatesTab = uiPreferences.showUpdatesTab().get()
+
+            // Cancel automatic updates if updates tab is disabled or interval is 0
+            if (interval > 0 && showUpdatesTab) {
                 val restrictions = preferences.autoUpdateDeviceRestrictions().get()
                 val networkType = if (DEVICE_NETWORK_NOT_METERED in restrictions) {
                     NetworkType.UNMETERED

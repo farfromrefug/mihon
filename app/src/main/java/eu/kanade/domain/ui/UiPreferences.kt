@@ -36,6 +36,13 @@ class UiPreferences(
 
     fun imagesInDescription() = preferenceStore.getBoolean("pref_render_images_description", true)
 
+    // Feature toggles
+    fun showStatsTab() = preferenceStore.getBoolean("pref_show_stats_tab", true)
+
+    fun showUpdatesTab() = preferenceStore.getBoolean("pref_show_updates_tab", true)
+
+    fun showHistoryTab() = preferenceStore.getBoolean("pref_show_history_tab", true)
+
     companion object {
         fun dateFormat(format: String): DateTimeFormatter = when (format) {
             "" -> DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)

@@ -35,6 +35,7 @@ fun MoreScreen(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     incognitoMode: Boolean,
     onIncognitoModeChange: (Boolean) -> Unit,
+    showStats: Boolean,
     onClickDownloadQueue: () -> Unit,
     onClickCategories: () -> Unit,
     onClickStats: () -> Unit,
@@ -108,12 +109,14 @@ fun MoreScreen(
                     onPreferenceClick = onClickCategories,
                 )
             }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_stats),
-                    icon = Icons.Outlined.QueryStats,
-                    onPreferenceClick = onClickStats,
-                )
+            if (showStats) {
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(MR.strings.label_stats),
+                        icon = Icons.Outlined.QueryStats,
+                        onPreferenceClick = onClickStats,
+                    )
+                }
             }
             item {
                 TextPreferenceWidget(

@@ -41,6 +41,7 @@ object SettingsAppearanceScreen : SearchableSettings {
         return listOf(
             getThemeGroup(uiPreferences = uiPreferences),
             getDisplayGroup(uiPreferences = uiPreferences),
+            getFeatureTogglesGroup(uiPreferences = uiPreferences),
         )
     }
 
@@ -148,6 +149,46 @@ object SettingsAppearanceScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.imagesInDescription(),
                     title = stringResource(MR.strings.pref_display_images_description),
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getFeatureTogglesGroup(
+        uiPreferences: UiPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_category_features),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.showUpdatesTab(),
+                    title = stringResource(MR.strings.pref_show_updates_tab),
+                    subtitle = stringResource(MR.strings.pref_show_updates_tab_summary),
+                    onValueChanged = {
+                        context.toast(MR.strings.requires_app_restart)
+                        true
+                    },
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.showHistoryTab(),
+                    title = stringResource(MR.strings.pref_show_history_tab),
+                    subtitle = stringResource(MR.strings.pref_show_history_tab_summary),
+                    onValueChanged = {
+                        context.toast(MR.strings.requires_app_restart)
+                        true
+                    },
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.showStatsTab(),
+                    title = stringResource(MR.strings.pref_show_stats_tab),
+                    subtitle = stringResource(MR.strings.pref_show_stats_tab_summary),
+                    onValueChanged = {
+                        context.toast(MR.strings.requires_app_restart)
+                        true
+                    },
                 ),
             ),
         )
