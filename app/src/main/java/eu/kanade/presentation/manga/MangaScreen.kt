@@ -906,20 +906,20 @@ private fun LazyListScope.sharedChapterGridItems(
 ) {
     // Filter only chapter items (skip MissingCount for grid view)
     val chapterItems = chapters.filterIsInstance<ChapterList.Item>()
-    
+
     // Calculate actual columns based on configuration (0 = auto)
     val actualColumns = if (columns <= 0) DEFAULT_CHAPTER_GRID_COLUMNS else columns
-    
+
     // Chunk chapters into rows
     val chunkedChapters = chapterItems.chunked(actualColumns)
-    
+
     items(
         items = chunkedChapters,
         key = { row -> "grid-row-${row.firstOrNull()?.id ?: 0}" },
         contentType = { MangaScreenItem.CHAPTER },
     ) { row ->
         val haptic = LocalHapticFeedback.current
-        
+
         androidx.compose.foundation.layout.Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -931,10 +931,10 @@ private fun LazyListScope.sharedChapterGridItems(
                     mangaId = manga.id,
                     sourceId = manga.source,
                     isMangaFavorite = manga.favorite,
-                    url = manga.thumbnailUrl,
+                    url = item.chapter.coverUrl ?: manga.thumbnailUrl,
                     lastModified = manga.coverLastModified,
                 )
-                
+
                 val chapterTitle = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
                     stringResource(
                         MR.strings.display_mode_chapter,
@@ -943,7 +943,7 @@ private fun LazyListScope.sharedChapterGridItems(
                 } else {
                     item.chapter.name
                 }
-                
+
                 val readProgress = item.chapter.lastPageRead
                     .takeIf { !item.chapter.read && it > 0L }
                     ?.let {
@@ -952,7 +952,7 @@ private fun LazyListScope.sharedChapterGridItems(
                             it + 1,
                         )
                     }
-                
+
                 Box(
                     modifier = Modifier.weight(1f),
                 ) {

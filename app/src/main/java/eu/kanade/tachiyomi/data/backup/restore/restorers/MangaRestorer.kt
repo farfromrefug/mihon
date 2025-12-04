@@ -204,6 +204,7 @@ class MangaRestorer(
                     chapter.dateFetch,
                     chapter.dateUpload,
                     chapter.version,
+                    chapter.coverUrl
                 )
             }
         }
@@ -227,6 +228,7 @@ class MangaRestorer(
                     chapterId = chapter.id,
                     version = chapter.version,
                     isSyncing = 0,
+                    coverUrl = chapter.coverUrl
                 )
             }
         }

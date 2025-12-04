@@ -8,6 +8,8 @@ class ChapterImpl : Chapter {
 
     override var manga_id: Long? = null
 
+    override var thumbnail_url: String? = null
+
     override lateinit var url: String
 
     override lateinit var name: String
