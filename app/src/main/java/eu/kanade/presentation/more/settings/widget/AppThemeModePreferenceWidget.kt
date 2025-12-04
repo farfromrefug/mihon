@@ -16,6 +16,7 @@ private val options = mapOf(
     ThemeMode.SYSTEM to MR.strings.theme_system,
     ThemeMode.LIGHT to MR.strings.theme_light,
     ThemeMode.DARK to MR.strings.theme_dark,
+    ThemeMode.EINK to MR.strings.theme_eink,
 )
 
 @Composable

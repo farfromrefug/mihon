@@ -15,9 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import tachiyomi.presentation.core.theme.LocalEinkMode
 
 /**
- * M3 Navbar with no horizontal spacer
+ * M3 Navbar with no horizontal spacer.
+ * In E-ink mode, uses white/surface background with no tonal elevation.
  *
  * @see [androidx.compose.material3.NavigationBar]
  */
@@ -30,10 +32,25 @@ fun NavigationBar(
     windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: use surface (white) background with no elevation
+    val effectiveContainerColor = if (isEinkMode) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        containerColor
+    }
+    val effectiveContentColor = if (isEinkMode) {
+        MaterialTheme.colorScheme.contentColorFor(effectiveContainerColor)
+    } else {
+        contentColor
+    }
+    val effectiveTonalElevation = if (isEinkMode) 0.dp else tonalElevation
+
     androidx.compose.material3.Surface(
-        color = containerColor,
-        contentColor = contentColor,
-        tonalElevation = tonalElevation,
+        color = effectiveContainerColor,
+        contentColor = effectiveContentColor,
+        tonalElevation = effectiveTonalElevation,
         modifier = modifier,
     ) {
         Row(

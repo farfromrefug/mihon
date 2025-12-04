@@ -8,6 +8,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,9 +28,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import tachiyomi.presentation.core.theme.LocalEinkMode
 
 /**
  * ExtendedFloatingActionButton with custom transition between collapsed/expanded state.
+ * In E-ink mode, displays as an outlined button with no elevation.
  *
  * @see androidx.compose.material3.ExtendedFloatingActionButton
  */
@@ -46,14 +49,49 @@ fun ExtendedFloatingActionButton(
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
 ) {
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: use outlined style with no elevation
+    val effectiveContainerColor = if (isEinkMode) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        containerColor
+    }
+    val effectiveContentColor = if (isEinkMode) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        contentColor
+    }
+    val effectiveElevation = if (isEinkMode) {
+        FloatingActionButtonDefaults.elevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+        )
+    } else {
+        elevation
+    }
+
+    // E-ink mode: add border to the modifier
+    val effectiveModifier = if (isEinkMode) {
+        modifier.border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline,
+            shape = shape,
+        )
+    } else {
+        modifier
+    }
+
     FloatingActionButton(
-        modifier = modifier,
+        modifier = effectiveModifier,
         onClick = onClick,
         interactionSource = interactionSource,
         shape = shape,
-        containerColor = containerColor,
-        contentColor = contentColor,
-        elevation = elevation,
+        containerColor = effectiveContainerColor,
+        contentColor = effectiveContentColor,
+        elevation = effectiveElevation,
     ) {
         val minWidth by animateDpAsState(
             targetValue = if (expanded) ExtendedFabMinimumWidth else FabContainerWidth,

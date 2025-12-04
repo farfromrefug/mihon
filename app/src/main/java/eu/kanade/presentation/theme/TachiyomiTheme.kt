@@ -4,10 +4,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.domain.ui.model.AppTheme
+import eu.kanade.domain.ui.model.ThemeMode
 import eu.kanade.presentation.theme.colorscheme.BaseColorScheme
 import eu.kanade.presentation.theme.colorscheme.CatppuccinColorScheme
 import eu.kanade.presentation.theme.colorscheme.GreenAppleColorScheme
@@ -23,6 +25,7 @@ import eu.kanade.presentation.theme.colorscheme.TealTurqoiseColorScheme
 import eu.kanade.presentation.theme.colorscheme.TidalWaveColorScheme
 import eu.kanade.presentation.theme.colorscheme.YinYangColorScheme
 import eu.kanade.presentation.theme.colorscheme.YotsubaColorScheme
+import tachiyomi.presentation.core.theme.LocalEinkMode
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -36,6 +39,7 @@ fun TachiyomiTheme(
     BaseTachiyomiTheme(
         appTheme = appTheme ?: uiPreferences.appTheme().get(),
         isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
+        isEinkMode = uiPreferences.themeMode().get() == ThemeMode.EINK,
         content = content,
     )
 }
@@ -44,19 +48,23 @@ fun TachiyomiTheme(
 fun TachiyomiPreviewTheme(
     appTheme: AppTheme = AppTheme.DEFAULT,
     isAmoled: Boolean = false,
+    isEinkMode: Boolean = false,
     content: @Composable () -> Unit,
-) = BaseTachiyomiTheme(appTheme, isAmoled, content)
+) = BaseTachiyomiTheme(appTheme, isAmoled, isEinkMode, content)
 
 @Composable
 private fun BaseTachiyomiTheme(
     appTheme: AppTheme,
     isAmoled: Boolean,
+    isEinkMode: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = getThemeColorScheme(appTheme, isAmoled),
-        content = content,
-    )
+    CompositionLocalProvider(LocalEinkMode provides isEinkMode) {
+        MaterialTheme(
+            colorScheme = getThemeColorScheme(appTheme, isAmoled, isEinkMode),
+            content = content,
+        )
+    }
 }
 
 @Composable
@@ -64,6 +72,7 @@ private fun BaseTachiyomiTheme(
 private fun getThemeColorScheme(
     appTheme: AppTheme,
     isAmoled: Boolean,
+    isEinkMode: Boolean = false,
 ): ColorScheme {
     val colorScheme = if (appTheme == AppTheme.MONET) {
         MonetColorScheme(LocalContext.current)
@@ -71,8 +80,8 @@ private fun getThemeColorScheme(
         colorSchemes.getOrDefault(appTheme, TachiyomiColorScheme)
     }
     return colorScheme.getColorScheme(
-        isSystemInDarkTheme(),
-        isAmoled,
+        isDark = if (isEinkMode) false else isSystemInDarkTheme(),
+        isAmoled = isAmoled,
     )
 }
 

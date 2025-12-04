@@ -38,11 +38,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import tachiyomi.presentation.core.theme.LocalEinkMode
 import tachiyomi.presentation.core.util.animateElevation
 import androidx.compose.material3.ButtonDefaults as M3ButtonDefaults
 
 /**
  * TextButton with additional onLongClick functionality.
+ * In E-ink mode, displays with an outlined border.
  *
  * @see androidx.compose.material3.TextButton
  */
@@ -64,22 +66,34 @@ fun TextButton(
     ),
     contentPadding: PaddingValues = M3ButtonDefaults.TextButtonContentPadding,
     content: @Composable RowScope.() -> Unit,
-) = Button(
-    onClick = onClick,
-    modifier = modifier,
-    onLongClick = onLongClick,
-    enabled = enabled,
-    interactionSource = interactionSource,
-    elevation = elevation,
-    shape = shape,
-    border = border,
-    colors = colors,
-    contentPadding = contentPadding,
-    content = content,
-)
+) {
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: add border if not already provided
+    val effectiveBorder = if (isEinkMode && border == null) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    } else {
+        border
+    }
+
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        onLongClick = onLongClick,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        elevation = elevation,
+        shape = shape,
+        border = effectiveBorder,
+        colors = colors,
+        contentPadding = contentPadding,
+        content = content,
+    )
+}
 
 /**
  * Button with additional onLongClick functionality.
+ * In E-ink mode, displays as outlined button with white background, border, and no elevation.
  *
  * @see androidx.compose.material3.TextButton
  */
@@ -97,9 +111,28 @@ fun Button(
     contentPadding: PaddingValues = M3ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled).value
-    val contentColor = colors.contentColor(enabled).value
-    val shadowElevation = elevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: use outlined style with white background, border, and no elevation
+    val effectiveColors = if (isEinkMode) {
+        ButtonDefaults.einkButtonColors()
+    } else {
+        colors
+    }
+    val effectiveBorder = if (isEinkMode) {
+        border ?: BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    } else {
+        border
+    }
+    val effectiveElevation = if (isEinkMode) {
+        ButtonDefaults.einkButtonElevation()
+    } else {
+        elevation
+    }
+
+    val containerColor = effectiveColors.containerColor(enabled).value
+    val contentColor = effectiveColors.contentColor(enabled).value
+    val shadowElevation = effectiveElevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp
 
     Surface(
         onClick = onClick,
@@ -109,7 +142,7 @@ fun Button(
         color = containerColor,
         contentColor = contentColor,
         shadowElevation = shadowElevation,
-        border = border,
+        border = effectiveBorder,
         interactionSource = interactionSource,
         enabled = enabled,
     ) {
@@ -154,6 +187,23 @@ object ButtonDefaults {
     )
 
     /**
+     * Creates a [ButtonColors] optimized for E-ink displays with white/surface background
+     * and primary-colored text.
+     */
+    @Composable
+    fun einkButtonColors(
+        containerColor: Color = MaterialTheme.colorScheme.surface,
+        contentColor: Color = MaterialTheme.colorScheme.primary,
+        disabledContainerColor: Color = MaterialTheme.colorScheme.surface,
+        disabledContentColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA),
+    ): ButtonColors = ButtonColors(
+        containerColor = containerColor,
+        contentColor = contentColor,
+        disabledContainerColor = disabledContainerColor,
+        disabledContentColor = disabledContentColor,
+    )
+
+    /**
      * Creates a [ButtonElevation] that will animate between the provided values according to the
      * Material specification for a [Button].
      *
@@ -177,6 +227,18 @@ object ButtonDefaults {
         focusedElevation = focusedElevation,
         hoveredElevation = hoveredElevation,
         disabledElevation = disabledElevation,
+    )
+
+    /**
+     * Creates a [ButtonElevation] with no elevation for E-ink displays.
+     */
+    @Composable
+    fun einkButtonElevation(): ButtonElevation = ButtonElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 0.dp,
+        focusedElevation = 0.dp,
+        hoveredElevation = 0.dp,
+        disabledElevation = 0.dp,
     )
 }
 
