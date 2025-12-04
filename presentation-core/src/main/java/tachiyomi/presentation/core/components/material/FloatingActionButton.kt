@@ -8,7 +8,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +19,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,8 +73,19 @@ fun ExtendedFloatingActionButton(
         elevation
     }
 
+    // E-ink mode: add border to the modifier
+    val effectiveModifier = if (isEinkMode) {
+        modifier.border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline,
+            shape = shape,
+        )
+    } else {
+        modifier
+    }
+
     FloatingActionButton(
-        modifier = modifier,
+        modifier = effectiveModifier,
         onClick = onClick,
         interactionSource = interactionSource,
         shape = shape,
@@ -100,30 +110,21 @@ fun ExtendedFloatingActionButton(
             label = "startPadding",
         )
 
-        // Draw border in E-ink mode
-        Box(
-            modifier = if (isEinkMode) {
-                Modifier
-            } else {
-                Modifier
-            },
+        Row(
+            modifier = Modifier
+                .sizeIn(minWidth = minWidth)
+                .padding(start = startPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
-            Row(
-                modifier = Modifier
-                    .sizeIn(minWidth = minWidth)
-                    .padding(start = startPadding),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+            icon()
+            AnimatedVisibility(
+                visible = expanded,
+                enter = ExtendedFabExpandAnimation,
+                exit = ExtendedFabCollapseAnimation,
             ) {
-                icon()
-                AnimatedVisibility(
-                    visible = expanded,
-                    enter = ExtendedFabExpandAnimation,
-                    exit = ExtendedFabCollapseAnimation,
-                ) {
-                    Box(modifier = Modifier.padding(start = ExtendedFabIconPadding, end = ExtendedFabTextPadding)) {
-                        text()
-                    }
+                Box(modifier = Modifier.padding(start = ExtendedFabIconPadding, end = ExtendedFabTextPadding)) {
+                    text()
                 }
             }
         }
