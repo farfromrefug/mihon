@@ -16,7 +16,7 @@ class GetIncognitoState(
 ) {
     fun await(sourceId: Long?): Boolean {
         // If history tab is disabled, treat as incognito mode (no history recording)
-        if (!uiPreferences.showHistoryTab().get()) return true
+//        if (!uiPreferences.showHistoryTab().get()) return true
         if (basePreferences.incognitoMode().get()) return true
         if (sourceId == null) return false
         val extensionPackage = extensionManager.getExtensionPackage(sourceId) ?: return false
@@ -25,22 +25,23 @@ class GetIncognitoState(
     }
 
     fun subscribe(sourceId: Long?): Flow<Boolean> {
-        if (sourceId == null) {
-            return combine(
-                basePreferences.incognitoMode().changes(),
-                uiPreferences.showHistoryTab().changes(),
-            ) { incognito, showHistory ->
-                incognito || !showHistory
-            }.distinctUntilChanged()
-        }
+        if (sourceId == null) return basePreferences.incognitoMode().changes()
+//        if (sourceId == null) {
+//            return combine(
+//                basePreferences.incognitoMode().changes(),
+//                uiPreferences.showHistoryTab().changes(),
+//            ) { incognito, showHistory ->
+//                incognito || !showHistory
+//            }.distinctUntilChanged()
+//        }
 
         return combine(
             basePreferences.incognitoMode().changes(),
-            uiPreferences.showHistoryTab().changes(),
+//            uiPreferences.showHistoryTab().changes(),
             sourcePreferences.incognitoExtensions().changes(),
             extensionManager.getExtensionPackageAsFlow(sourceId),
-        ) { incognito, showHistory, incognitoExtensions, extensionPackage ->
-            !showHistory || incognito || (extensionPackage in incognitoExtensions)
+        ) { incognito, incognitoExtensions, extensionPackage ->
+            incognito || (extensionPackage in incognitoExtensions)
         }
             .distinctUntilChanged()
     }
