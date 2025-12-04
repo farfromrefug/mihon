@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,9 +33,11 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import eu.kanade.presentation.library.components.UnreadBadge
 import eu.kanade.tachiyomi.data.download.model.Download
 import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.BadgeGroup
 import tachiyomi.presentation.core.components.material.DISABLED_ALPHA
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.selectedBackground
@@ -51,6 +54,7 @@ fun ChapterCompactGridItem(
     read: Boolean,
     bookmark: Boolean,
     selected: Boolean,
+    issue: Double,
     downloadIndicatorEnabled: Boolean,
     downloadStateProvider: () -> Download.State,
     downloadProgressProvider: () -> Int,
@@ -81,9 +85,33 @@ fun ChapterCompactGridItem(
                     title = title,
                     read = read,
                     bookmark = bookmark,
-                    date = date,
-                    readProgress = readProgress,
+                    date = null,
+                    readProgress = null,
                 )
+            },
+            badgesStart = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    UnreadBadge(count = issue.toLong())
+                    if (!read) {
+                        Icon(
+                            imageVector = Icons.Filled.Circle,
+                            contentDescription = stringResource(MR.strings.unread),
+                            modifier = Modifier.size(8.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (bookmark) {
+                        Icon(
+                            imageVector = Icons.Filled.Bookmark,
+                            contentDescription = stringResource(MR.strings.action_filter_bookmarked),
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             },
             badgesEnd = if (downloadIndicatorEnabled) {
                 {
@@ -112,6 +140,7 @@ fun ChapterComfortableGridItem(
     read: Boolean,
     bookmark: Boolean,
     selected: Boolean,
+    issue: Double,
     downloadIndicatorEnabled: Boolean,
     downloadStateProvider: () -> Download.State,
     downloadProgressProvider: () -> Int,
@@ -143,6 +172,7 @@ fun ChapterComfortableGridItem(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        UnreadBadge(count = issue.toLong())
                         if (!read) {
                             Icon(
                                 imageVector = Icons.Filled.Circle,
@@ -177,8 +207,8 @@ fun ChapterComfortableGridItem(
             )
             ChapterGridItemTitle(
                 title = title,
-                date = date,
-                readProgress = readProgress,
+                date = null,
+                readProgress = null,
                 read = read,
                 modifier = Modifier.padding(4.dp),
             )
@@ -220,22 +250,22 @@ private fun BoxScope.ChapterCoverTextOverlay(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (!read) {
-                Icon(
-                    imageVector = Icons.Filled.Circle,
-                    contentDescription = stringResource(MR.strings.unread),
-                    modifier = Modifier.size(6.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            if (bookmark) {
-                Icon(
-                    imageVector = Icons.Filled.Bookmark,
-                    contentDescription = stringResource(MR.strings.action_filter_bookmarked),
-                    modifier = Modifier.size(10.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+//            if (!read) {
+//                Icon(
+//                    imageVector = Icons.Filled.Circle,
+//                    contentDescription = stringResource(MR.strings.unread),
+//                    modifier = Modifier.size(6.dp),
+//                    tint = MaterialTheme.colorScheme.primary,
+//                )
+//            }
+//            if (bookmark) {
+//                Icon(
+//                    imageVector = Icons.Filled.Bookmark,
+//                    contentDescription = stringResource(MR.strings.action_filter_bookmarked),
+//                    modifier = Modifier.size(10.dp),
+//                    tint = MaterialTheme.colorScheme.primary,
+//                )
+//            }
         }
         Text(
             text = title,
