@@ -118,7 +118,8 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
         // defaultCategory() returns -1 for "Always ask", 0 for "Default", or a specific category ID
         val defaultCategoryId = libraryPreferences.defaultCategory().get().toLong()
         val categories = getCategories.await()
-        // Only set a default category if a specific one is configured (not -1 or 0)
+        // Find the default category if a specific one is configured (not -1 "Always ask")
+        // defaultCategoryId == 0 means "Default" which doesn't require category assignment
         val defaultCategory = if (defaultCategoryId > 0) {
             categories.find { it.id == defaultCategoryId }
         } else {

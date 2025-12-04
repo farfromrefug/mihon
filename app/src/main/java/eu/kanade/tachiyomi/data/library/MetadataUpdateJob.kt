@@ -44,6 +44,7 @@ import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.fetchAndIncrement
 import kotlin.concurrent.atomics.incrementAndFetch
+import kotlin.concurrent.atomics.addAndFetch
 
 @OptIn(ExperimentalAtomicApi::class)
 class MetadataUpdateJob(private val context: Context, workerParams: WorkerParameters) :
@@ -156,9 +157,8 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
 
                                     // Update progress after processing chapters
                                     // Add the number of chapters processed (at least 1 per manga)
-                                    repeat(chapters.size.coerceAtLeast(1)) {
-                                        localChapterProgress.incrementAndFetch()
-                                    }
+                                    val chapterCount = chapters.size.coerceAtLeast(1)
+                                    localChapterProgress.addAndFetch(chapterCount)
                                     notifier.showChapterProgressNotification(
                                         manga,
                                         localChapterProgress.load().coerceAtMost(totalLocalChapters),
