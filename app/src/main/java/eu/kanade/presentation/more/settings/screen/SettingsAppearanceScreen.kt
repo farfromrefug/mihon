@@ -185,6 +185,10 @@ object SettingsAppearanceScreen : SearchableSettings {
                     preference = uiPreferences.showStatsTab(),
                     title = stringResource(MR.strings.pref_show_stats_tab),
                     subtitle = stringResource(MR.strings.pref_show_stats_tab_summary),
+                    onValueChanged = {
+                        context.toast(MR.strings.requires_app_restart)
+                        true
+                    },
                 ),
             ),
         )
