@@ -158,10 +158,10 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
                                     // Update progress after processing chapters
                                     // Add the number of chapters processed (at least 1 per manga)
                                     val chapterCount = chapters.size.coerceAtLeast(1)
-                                    localChapterProgress.addAndFetch(chapterCount)
+                                    val currentProgress = localChapterProgress.addAndFetch(chapterCount)
                                     notifier.showChapterProgressNotification(
                                         manga,
-                                        localChapterProgress.load().coerceAtMost(totalLocalChapters),
+                                        currentProgress.coerceAtMost(totalLocalChapters),
                                         totalLocalChapters,
                                     )
                                 } catch (e: Exception) {
