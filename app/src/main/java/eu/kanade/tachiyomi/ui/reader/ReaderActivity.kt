@@ -118,8 +118,13 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
+        // Shader input name for RenderEffect
+        private const val SHADER_INPUT_NAME = "inputImage"
+
         // AGSL sharpen shader using a 3x3 sharpening convolution kernel
         // Uses unsharp mask technique: output = original + scale * (original - blurred)
+        // Note: In AGSL/RenderEffect context, coordinates are in pixel space,
+        // so offsets of 1 correctly sample adjacent pixels regardless of image size.
         private const val SHARPEN_SHADER = """
             uniform shader inputImage;
             uniform float scale;
@@ -129,6 +134,7 @@ class ReaderActivity : BaseActivity() {
                 half4 center = inputImage.eval(coord);
                 
                 // Sample neighboring pixels (simple 3x3 kernel)
+                // Offset of 1 pixel in each direction for edge detection
                 half4 top = inputImage.eval(coord + float2(0, -1));
                 half4 bottom = inputImage.eval(coord + float2(0, 1));
                 half4 left = inputImage.eval(coord + float2(-1, 0));
@@ -1022,7 +1028,7 @@ class ReaderActivity : BaseActivity() {
                 val sharpenShader = RuntimeShader(SHARPEN_SHADER)
                 sharpenShader.setFloatUniform("scale", scale)
 
-                val effect = RenderEffect.createRuntimeShaderEffect(sharpenShader, "inputImage")
+                val effect = RenderEffect.createRuntimeShaderEffect(sharpenShader, SHADER_INPUT_NAME)
                 binding.viewerContainer.setRenderEffect(effect)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to apply sharpen effect" }
