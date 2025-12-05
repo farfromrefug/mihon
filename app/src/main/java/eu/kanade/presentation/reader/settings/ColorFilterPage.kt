@@ -132,7 +132,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
     if (sharpenFilter) {
         val sharpenScale by screenModel.preferences.sharpenFilterScale().collectAsState()
         // Convert float (0.0-2.0) to int (0-20) for the slider
-        val sliderValue = (sharpenScale * 10).roundToInt()
+        val sliderValue = (sharpenScale * SHARPEN_SCALE_MULTIPLIER).roundToInt()
         SliderItem(
             value = sliderValue,
             valueRange = 0..20,
@@ -140,7 +140,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             label = stringResource(MR.strings.pref_sharpen_filter_scale),
             valueString = "%.1f".format(sharpenScale),
             onChange = { newValue ->
-                screenModel.preferences.sharpenFilterScale().set(newValue / 10f)
+                screenModel.preferences.sharpenFilterScale().set(newValue / SHARPEN_SCALE_MULTIPLIER.toFloat())
             },
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
@@ -159,3 +159,6 @@ private const val ALPHA_MASK: Long = 0xFF000000
 private const val RED_MASK: Long = 0x00FF0000
 private const val GREEN_MASK: Long = 0x0000FF00
 private const val BLUE_MASK: Long = 0x000000FF
+
+// Multiplier for converting sharpen scale float (0.0-2.0) to slider int (0-20)
+private const val SHARPEN_SCALE_MULTIPLIER = 10

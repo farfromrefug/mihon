@@ -1010,7 +1010,8 @@ class ReaderActivity : BaseActivity() {
          */
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         private fun setSharpenEffect(enabled: Boolean, scale: Float) {
-            if (!enabled || scale <= 0f) {
+            // Disable effect when not enabled or scale is 0 (no sharpening)
+            if (!enabled || scale == 0f) {
                 binding.viewerContainer.setRenderEffect(null)
                 return
             }
