@@ -200,6 +200,10 @@ object HomeScreen : Screen() {
         val colors = if (isEinkMode) {
             NavigationBarItemDefaults.colors(
                 indicatorColor = MaterialTheme.colorScheme.surface,
+                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
             )
         } else {
             NavigationBarItemDefaults.colors()

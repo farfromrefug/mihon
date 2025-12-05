@@ -115,22 +115,24 @@ fun Button(
     val isEinkMode = LocalEinkMode.current
 
     // E-ink mode: use outlined style with white background, border, and no elevation
-    val effectiveColors = if (isEinkMode) {
-        ButtonDefaults.einkButtonColors()
-    } else {
-        colors
-    }
-    val effectiveBorder = if (isEinkMode) {
-        border ?: BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-    } else {
-        border
-    }
-    val effectiveElevation = if (isEinkMode) {
-        ButtonDefaults.einkButtonElevation()
-    } else {
-        elevation
-    }
-
+//    val effectiveColors = if (isEinkMode) {
+//        ButtonDefaults.einkButtonColors()
+//    } else {
+//        colors
+//    }
+//    val effectiveBorder = if (isEinkMode) {
+//        border ?: BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+//    } else {
+//        border
+//    }
+//    val effectiveElevation = if (isEinkMode) {
+//        ButtonDefaults.einkButtonElevation()
+//    } else {
+//        elevation
+//    }
+    val effectiveColors = colors
+    val effectiveBorder = border
+    val effectiveElevation = elevation
     val containerColor = effectiveColors.containerColor(enabled).value
     val contentColor = effectiveColors.contentColor(enabled).value
     val shadowElevation = effectiveElevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp
