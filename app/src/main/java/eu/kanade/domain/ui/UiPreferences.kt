@@ -36,6 +36,8 @@ class UiPreferences(
 
     fun imagesInDescription() = preferenceStore.getBoolean("pref_render_images_description", true)
 
+    fun showCoverBackdrop() = preferenceStore.getBoolean("pref_show_cover_backdrop", true)
+
     // Feature toggles
     fun showStatsTab() = preferenceStore.getBoolean("pref_show_stats_tab", true)
 
