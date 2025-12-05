@@ -25,6 +25,7 @@ import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ensureActive
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -76,7 +77,7 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
 
         return withIOContext {
             try {
-                scanLocalSource()
+                scanLocalSource(this)
                 Result.success()
             } catch (e: Exception) {
                 if (e is CancellationException) {
@@ -104,7 +105,7 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
         )
     }
 
-    private suspend fun scanLocalSource() {
+    private suspend fun scanLocalSource(scope: CoroutineScope) {
         val localSource = sourceManager.get(LocalSource.ID) as? LocalSource ?: return
 
         // Get all manga from local source
@@ -129,7 +130,7 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
         }
 
         for (sManga in localMangas) {
-            ensureActive()
+            scope.ensureActive()
 
             // Show progress notification
             notifier.showChapterProgressNotification(
