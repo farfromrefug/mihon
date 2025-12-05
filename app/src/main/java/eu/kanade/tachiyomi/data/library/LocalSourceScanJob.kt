@@ -65,8 +65,10 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
     private val notifier = LibraryUpdateNotifier(context)
 
     override suspend fun doWork(): Result {
-        // Check if the feature is enabled
-        if (!libraryPreferences.autoAddLocalMangaToLibrary().get()) {
+        // For periodic auto-scans, check if the feature is enabled
+        // For manual scans (triggered by download to local source), always run
+        val isManualScan = tags.contains(WORK_NAME_MANUAL)
+        if (!isManualScan && !libraryPreferences.autoAddLocalMangaToLibrary().get()) {
             return Result.success()
         }
 
