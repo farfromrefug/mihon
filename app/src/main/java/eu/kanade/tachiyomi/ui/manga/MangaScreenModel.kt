@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -31,10 +32,12 @@ import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
+import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.network.HttpException
@@ -58,6 +61,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.domain.chapter.interactor.FilterChaptersForDownload
+import okhttp3.Call
+import okhttp3.Request
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.TriState
@@ -91,10 +96,11 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.isLocal
-import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.io.File
 import kotlin.math.floor
 
 class MangaScreenModel(
@@ -928,15 +934,15 @@ class MangaScreenModel(
         }
 
         screenModelScope.launchIO {
-            val coverCache: eu.kanade.tachiyomi.data.cache.CoverCache = Injekt.get()
-            val coverManager: tachiyomi.source.local.image.LocalCoverManager = Injekt.get()
+            val coverCache: CoverCache = Injekt.get()
+            val coverManager: LocalCoverManager = Injekt.get()
             
             val result = try {
                 val inputStream = when {
                     coverUrl.startsWith("http://") || coverUrl.startsWith("https://") -> {
                         // For HTTP URLs, use OkHttp to fetch the image
-                        val client = Injekt.get<okhttp3.Call.Factory>()
-                        val request = okhttp3.Request.Builder().url(coverUrl).build()
+                        val client = Injekt.get<Call.Factory>()
+                        val request = Request.Builder().url(coverUrl).build()
                         val response = client.newCall(request).execute()
                         if (!response.isSuccessful) {
                             response.close()
@@ -946,15 +952,15 @@ class MangaScreenModel(
                     }
                     coverUrl.startsWith("content://") -> {
                         // For content URIs, use content resolver
-                        context.contentResolver.openInputStream(android.net.Uri.parse(coverUrl))
+                        context.contentResolver.openInputStream(Uri.parse(coverUrl))
                             ?: throw Exception("Cannot open content URI")
                     }
                     else -> {
                         // For local files
                         val file = if (coverUrl.startsWith("file://")) {
-                            java.io.File(coverUrl.substringAfter("file://"))
+                            File(coverUrl.substringAfter("file://"))
                         } else {
-                            java.io.File(coverUrl)
+                            File(coverUrl)
                         }
                         file.inputStream()
                     }
