@@ -41,6 +41,7 @@ import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
+import eu.kanade.tachiyomi.util.editCover
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
@@ -896,6 +897,86 @@ class MangaScreenModel(
                 .filterNot { it.bookmark == bookmarked }
                 .map { ChapterUpdate(id = it.id, bookmark = bookmarked) }
                 .let { updateChapter.awaitAll(it) }
+        }
+        toggleAllSelection(false)
+    }
+
+    /**
+     * Result enum for setting chapter cover as manga cover.
+     */
+    enum class SetAsCoverResult {
+        Success,
+        AddToLibraryFirst,
+        Error,
+    }
+
+    /**
+     * Sets the cover of a chapter as the manga cover.
+     * @param chapter the chapter whose cover should be used.
+     */
+    fun setChapterCoverAsMangaCover(chapter: Chapter) {
+        val manga = successState?.manga ?: return
+        val coverUrl = chapter.coverUrl
+        if (coverUrl.isNullOrEmpty()) {
+            screenModelScope.launch {
+                snackbarHostState.showSnackbar(
+                    message = context.stringResource(MR.strings.notification_cover_update_failed),
+                    withDismissAction = true,
+                )
+            }
+            return
+        }
+
+        screenModelScope.launchIO {
+            val result = try {
+                val inputStream = when {
+                    coverUrl.startsWith("http://") || coverUrl.startsWith("https://") -> {
+                        // For HTTP URLs, use OkHttp to fetch the image
+                        val client = Injekt.get<okhttp3.Call.Factory>()
+                        val request = okhttp3.Request.Builder().url(coverUrl).build()
+                        val response = client.newCall(request).execute()
+                        response.body.byteStream()
+                    }
+                    coverUrl.startsWith("content://") -> {
+                        // For content URIs, use content resolver
+                        context.contentResolver.openInputStream(android.net.Uri.parse(coverUrl))
+                            ?: throw Exception("Cannot open content URI")
+                    }
+                    else -> {
+                        // For local files
+                        val file = if (coverUrl.startsWith("file://")) {
+                            java.io.File(coverUrl.substringAfter("file://"))
+                        } else {
+                            java.io.File(coverUrl)
+                        }
+                        file.inputStream()
+                    }
+                }
+
+                inputStream.use { stream ->
+                    manga.editCover(Injekt.get(), stream, updateManga, Injekt.get())
+                }
+
+                if (manga.isLocal() || manga.favorite) {
+                    SetAsCoverResult.Success
+                } else {
+                    SetAsCoverResult.AddToLibraryFirst
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Error setting chapter cover as manga cover" }
+                SetAsCoverResult.Error
+            }
+
+            val message = when (result) {
+                SetAsCoverResult.Success -> context.stringResource(MR.strings.cover_updated)
+                SetAsCoverResult.AddToLibraryFirst -> context.stringResource(MR.strings.notification_first_add_to_library)
+                SetAsCoverResult.Error -> context.stringResource(MR.strings.notification_cover_update_failed)
+            }
+
+            snackbarHostState.showSnackbar(
+                message = message,
+                withDismissAction = true,
+            )
         }
         toggleAllSelection(false)
     }
