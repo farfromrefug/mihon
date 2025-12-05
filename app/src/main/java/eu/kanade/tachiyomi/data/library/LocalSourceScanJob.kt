@@ -193,15 +193,15 @@ class LocalSourceScanJob(private val context: Context, workerParams: WorkerParam
 
     private suspend fun updateMangaMetadata(manga: Manga, source: LocalSource) {
         try {
-            // Update manga details
+            // First sync chapters - this may create cover.jpg from chapter cover
+            val chapters = source.getChapterList(manga.toSManga())
+            syncChaptersWithSource.await(chapters, manga, source, manualFetch = false)
+
+            // Now get manga details - this will pick up cover.jpg if created
             val networkManga = source.getMangaDetails(manga.toSManga())
             val updatedManga = manga.prepUpdateCover(coverCache, networkManga, true)
                 .copyFrom(networkManga)
             updateManga.await(updatedManga.toMangaUpdate())
-
-            // Sync chapters
-            val chapters = source.getChapterList(manga.toSManga())
-            syncChaptersWithSource.await(chapters, manga, source, manualFetch = false)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to update metadata for: ${manga.title}" }
         }

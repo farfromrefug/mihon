@@ -366,6 +366,16 @@ class DownloadProvider(
     }
 
     /**
+     * Returns the hash suffix used at the end of chapter directory names.
+     * This can be used to identify chapters regardless of the template used.
+     *
+     * @param chapterUrl the url of the chapter.
+     */
+    fun getChapterUrlHashSuffix(chapterUrl: String): String {
+        return "_" + md5(chapterUrl).take(6)
+    }
+
+    /**
      * Returns valid downloaded chapter directory names.
      *
      * @param chapter the domain chapter object.

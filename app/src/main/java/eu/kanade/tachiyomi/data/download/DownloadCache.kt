@@ -172,11 +172,13 @@ class DownloadCache(
             if (localSourceDir != null) {
                 val localMangaDir = localSourceDir.mangaDirs[provider.getLocalSourceMangaDirName(mangaTitle)]
                 if (localMangaDir != null) {
-                    return provider.getValidChapterDirNames(
-                        chapterName,
-                        chapterScanlator,
-                        chapterUrl,
-                    ).any { it in localMangaDir.chapterDirs }
+                    // Check by URL hash suffix since the chapter folder template may differ
+                    // from the standard chapter folder name
+                    val chapterHash = provider.getChapterUrlHashSuffix(chapterUrl)
+                    val hasMatchingChapter = localMangaDir.chapterDirs.any { dirName ->
+                        dirName.endsWith(chapterHash) || dirName.endsWith("$chapterHash.cbz")
+                    }
+                    if (hasMatchingChapter) return true
                 }
             }
         }
