@@ -115,6 +115,12 @@ class ReaderPreferences(
 
     fun invertedColors() = preferenceStore.getBoolean("pref_inverted_colors", false)
 
+    fun sharpenFilter() = preferenceStore.getBoolean("pref_sharpen_filter", false)
+
+    fun sharpenFilterScale() = preferenceStore.getFloat("pref_sharpen_filter_scale", 0.5f)
+
+    fun saveColorFiltersPerChapter() = preferenceStore.getBoolean("pref_save_color_filters_per_chapter", false)
+
     // endregion
 
     // region Controls

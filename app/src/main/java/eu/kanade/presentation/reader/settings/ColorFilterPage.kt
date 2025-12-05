@@ -19,6 +19,7 @@ import tachiyomi.presentation.core.components.SettingsChipRow
 import tachiyomi.presentation.core.components.SliderItem
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
+import kotlin.math.roundToInt
 
 @Composable
 internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel) {
@@ -121,6 +122,33 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
     CheckboxItem(
         label = stringResource(MR.strings.pref_inverted_colors),
         pref = screenModel.preferences.invertedColors(),
+    )
+
+    val sharpenFilter by screenModel.preferences.sharpenFilter().collectAsState()
+    CheckboxItem(
+        label = stringResource(MR.strings.pref_sharpen_filter),
+        pref = screenModel.preferences.sharpenFilter(),
+    )
+    if (sharpenFilter) {
+        val sharpenScale by screenModel.preferences.sharpenFilterScale().collectAsState()
+        // Convert float (0.0-2.0) to int (0-20) for the slider
+        val sliderValue = (sharpenScale * 10).roundToInt()
+        SliderItem(
+            value = sliderValue,
+            valueRange = 0..20,
+            steps = 19,
+            label = stringResource(MR.strings.pref_sharpen_filter_scale),
+            valueString = "%.1f".format(sharpenScale),
+            onChange = { newValue ->
+                screenModel.preferences.sharpenFilterScale().set(newValue / 10f)
+            },
+            pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        )
+    }
+
+    CheckboxItem(
+        label = stringResource(MR.strings.pref_save_color_filters_per_chapter),
+        pref = screenModel.preferences.saveColorFiltersPerChapter(),
     )
 }
 

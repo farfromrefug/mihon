@@ -10,6 +10,8 @@ import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.RenderEffect
+import android.graphics.RuntimeShader
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +23,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -114,6 +117,33 @@ class ReaderActivity : BaseActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
         }
+
+        // AGSL sharpen shader using a 3x3 sharpening convolution kernel
+        // Uses unsharp mask technique: output = original + scale * (original - blurred)
+        private const val SHARPEN_SHADER = """
+            uniform shader inputImage;
+            uniform float scale;
+            
+            half4 main(float2 coord) {
+                // Sample the center pixel
+                half4 center = inputImage.eval(coord);
+                
+                // Sample neighboring pixels (simple 3x3 kernel)
+                half4 top = inputImage.eval(coord + float2(0, -1));
+                half4 bottom = inputImage.eval(coord + float2(0, 1));
+                half4 left = inputImage.eval(coord + float2(-1, 0));
+                half4 right = inputImage.eval(coord + float2(1, 0));
+                
+                // Calculate the average of neighbors (simple blur approximation)
+                half4 blur = (top + bottom + left + right) / 4.0;
+                
+                // Unsharp mask: output = original + scale * (original - blurred)
+                half4 sharpened = center + scale * (center - blur);
+                
+                // Clamp to valid color range and preserve alpha
+                return half4(clamp(sharpened.rgb, half3(0.0), half3(1.0)), center.a);
+            }
+        """
     }
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
@@ -871,6 +901,18 @@ class ReaderActivity : BaseActivity() {
                 }
                 .launchIn(lifecycleScope)
 
+            // Sharpen filter (API 33+ required for RuntimeShader)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                combine(
+                    readerPreferences.sharpenFilter().changes(),
+                    readerPreferences.sharpenFilterScale().changes(),
+                ) { enabled, scale -> enabled to scale }
+                    .onEach { (enabled, scale) ->
+                        setSharpenEffect(enabled, scale)
+                    }
+                    .launchIn(lifecycleScope)
+            }
+
             combine(
                 readerPreferences.fullscreen().changes(),
                 readerPreferences.drawUnderCutout().changes(),
@@ -960,6 +1002,31 @@ class ReaderActivity : BaseActivity() {
         private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
             val paint = if (grayscale || invertedColors) getCombinedPaint(grayscale, invertedColors) else null
             binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)
+        }
+
+        /**
+         * Sets the sharpen render effect on the viewer container.
+         * Only available on API 33+ (Android 13+) which supports RuntimeShader.
+         */
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        private fun setSharpenEffect(enabled: Boolean, scale: Float) {
+            if (!enabled || scale <= 0f) {
+                binding.viewerContainer.setRenderEffect(null)
+                return
+            }
+
+            try {
+                // AGSL (Android Graphics Shading Language) sharpen shader
+                // Uses a simple unsharp mask technique: output = original + scale * (original - blurred)
+                val sharpenShader = RuntimeShader(SHARPEN_SHADER)
+                sharpenShader.setFloatUniform("scale", scale)
+
+                val effect = RenderEffect.createRuntimeShaderEffect(sharpenShader, "inputImage")
+                binding.viewerContainer.setRenderEffect(effect)
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to apply sharpen effect" }
+                binding.viewerContainer.setRenderEffect(null)
+            }
         }
     }
 }
