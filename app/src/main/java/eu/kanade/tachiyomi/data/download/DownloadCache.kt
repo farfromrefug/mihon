@@ -46,9 +46,11 @@ import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
@@ -67,6 +69,7 @@ class DownloadCache(
     private val sourceManager: SourceManager = Injekt.get(),
     private val extensionManager: ExtensionManager = Injekt.get(),
     private val storageManager: StorageManager = Injekt.get(),
+    private val downloadPreferences: DownloadPreferences = Injekt.get(),
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -148,17 +151,36 @@ class DownloadCache(
 
         renewCache()
 
+        // First check source-specific directory
         val sourceDir = rootDownloadsDir.sourceDirs[sourceId]
         if (sourceDir != null) {
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(mangaTitle)]
             if (mangaDir != null) {
-                return provider.getValidChapterDirNames(
+                val found = provider.getValidChapterDirNames(
                     chapterName,
                     chapterScanlator,
                     chapterUrl,
                 ).any { it in mangaDir.chapterDirs }
+                if (found) return true
             }
         }
+
+        // Also check local source directory if downloadToLocalSource is enabled
+        // This allows remote source browsing to see chapters downloaded to local source
+        if (downloadPreferences.downloadToLocalSource().get() && sourceId != LocalSource.ID) {
+            val localSourceDir = rootDownloadsDir.sourceDirs[LocalSource.ID]
+            if (localSourceDir != null) {
+                val localMangaDir = localSourceDir.mangaDirs[provider.getLocalSourceMangaDirName(mangaTitle)]
+                if (localMangaDir != null) {
+                    return provider.getValidChapterDirNames(
+                        chapterName,
+                        chapterScanlator,
+                        chapterUrl,
+                    ).any { it in localMangaDir.chapterDirs }
+                }
+            }
+        }
+
         return false
     }
 
@@ -177,20 +199,40 @@ class DownloadCache(
 
     /**
      * Returns the amount of downloaded chapters for a manga.
+     * When downloadToLocalSource is enabled, chapters are downloaded to local source folder
+     * instead of source-specific folder, so we check both locations.
+     * Double-counting won't occur since chapters are only downloaded to one location
+     * based on the preference setting at download time.
      *
      * @param manga the manga to check.
      */
     fun getDownloadCount(manga: Manga): Int {
         renewCache()
 
+        var count = 0
+
+        // Check source-specific directory (used when downloadToLocalSource is disabled)
         val sourceDir = rootDownloadsDir.sourceDirs[manga.source]
         if (sourceDir != null) {
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)]
             if (mangaDir != null) {
-                return mangaDir.chapterDirs.size
+                count += mangaDir.chapterDirs.size
             }
         }
-        return 0
+
+        // Also check local source directory if downloadToLocalSource is enabled
+        // This allows remote source manga to show chapters downloaded to local source
+        if (downloadPreferences.downloadToLocalSource().get() && manga.source != LocalSource.ID) {
+            val localSourceDir = rootDownloadsDir.sourceDirs[LocalSource.ID]
+            if (localSourceDir != null) {
+                val localMangaDir = localSourceDir.mangaDirs[provider.getLocalSourceMangaDirName(manga.title)]
+                if (localMangaDir != null) {
+                    count += localMangaDir.chapterDirs.size
+                }
+            }
+        }
+
+        return count
     }
 
     /**

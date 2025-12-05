@@ -54,7 +54,6 @@ import tachiyomi.core.metadata.comicinfo.ComicInfo
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.download.service.DownloadPreferences
-import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
@@ -76,7 +75,6 @@ class Downloader(
     private val sourceManager: SourceManager = Injekt.get(),
     private val chapterCache: ChapterCache = Injekt.get(),
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
-    private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val xml: XML = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
@@ -431,11 +429,11 @@ class Downloader(
 
             download.status = Download.State.DOWNLOADED
 
-            // If downloading to local source with auto-add enabled, trigger a local source scan
+            // If downloading to local source, trigger a local source scan
             // to add the manga to library and update metadata (cover.jpg, ComicInfo.xml)
-            if (downloadPreferences.downloadToLocalSource().get() &&
-                libraryPreferences.autoAddLocalMangaToLibrary().get()
-            ) {
+            // This is separate from the "auto add local manga to library" setting which
+            // controls background scanning for pre-existing local files
+            if (downloadPreferences.downloadToLocalSource().get()) {
                 LocalSourceScanJob.startNow(context)
             }
         } catch (error: Throwable) {

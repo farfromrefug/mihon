@@ -726,9 +726,9 @@ class MangaScreenModel(
                 downloadChapters(chapters)
             }
 
-            // Don't show snackbar if auto-add to library is enabled for local source downloads
-            val shouldAutoAdd = downloadPreferences.downloadToLocalSource().get() &&
-                libraryPreferences.autoAddLocalMangaToLibrary().get()
+            // Don't show snackbar if downloading to local source
+            // (manga will be automatically added to library after download)
+            val shouldAutoAdd = downloadPreferences.downloadToLocalSource().get()
 
             if (!isFavorited && !successState.hasPromptedToAddBefore && !shouldAutoAdd) {
                 updateSuccessState { state ->
