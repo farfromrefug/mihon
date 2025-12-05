@@ -100,37 +100,27 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
         var processedCount = 0
 
         while (true) {
-            // Get the next manga and remaining queue size atomically
+            // Get the next manga ID, current queue size, and total processed
             val result = queueMutex.withLock {
                 if (pendingMangaIds.isNotEmpty()) {
                     val id = pendingMangaIds.removeAt(0)
-                    Pair(id, pendingMangaIds.size)
+                    // Total = processed so far + current (1) + remaining in queue
+                    val totalInQueue = processedCount + 1 + pendingMangaIds.size
+                    Triple(id, processedCount + 1, totalInQueue)
                 } else {
                     null
                 }
             } ?: break
 
-            val (mangaId, remainingInQueue) = result
+            val (mangaId, currentPosition, totalCount) = result
 
             val manga = getManga.await(mangaId) ?: continue
 
             // Only process if it's still a favorite and is from local source
             if (!manga.favorite || manga.source != LocalSource.ID) {
+                processedCount++
                 continue
             }
-
-            // Total = already processed + current (1) + remaining in queue
-            val totalCount = processedCount + 1 + remainingInQueue
-            val currentPosition = processedCount + 1
-
-            // Show initial progress notification for this manga
-            notifier.showLocalMangaQueueNotification(
-                manga.title,
-                currentPosition,
-                totalCount,
-                currentChapter = 0,
-                totalChapters = 0,
-            )
 
             try {
                 prepareMangaMetadata(manga, currentPosition, totalCount)
@@ -145,6 +135,20 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
     private suspend fun prepareMangaMetadata(manga: Manga, currentManga: Int, totalManga: Int) {
         val localSource = sourceManager.get(LocalSource.ID) as? LocalSource ?: return
 
+        // Check if more items have been added to the queue and update total
+        val currentTotalManga = queueMutex.withLock {
+            currentManga + pendingMangaIds.size
+        }
+
+        // Show initial progress notification for this manga (0 chapters enumerated)
+        notifier.showLocalMangaQueueNotification(
+            mangaTitle = manga.title,
+            currentManga = currentManga,
+            totalManga = currentTotalManga,
+            currentChapter = 0,
+            totalChapters = 0,
+        )
+
         try {
             // Fetch manga details (metadata, cover)
             val networkManga = localSource.getMangaDetails(manga.toSManga())
@@ -152,33 +156,32 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
                 .copyFrom(networkManga)
             updateManga.await(updatedManga.toMangaUpdate())
 
-            // Get chapters to know the total count
+            // Get chapters - this does the heavy processing
             val chapters = localSource.getChapterList(manga.toSManga())
             val totalChapters = chapters.size
 
-            // Show progress with chapter count
-            notifier.showLocalMangaQueueNotification(
-                manga.title,
-                currentManga,
-                totalManga,
-                currentChapter = 0,
-                totalChapters = totalChapters,
-            )
+            // Re-check queue size in case more items were added
+            val updatedTotalManga = queueMutex.withLock {
+                currentManga + pendingMangaIds.size
+            }
 
-            // Sync chapters - this processes them and the notification is updated during sync
-            syncChaptersWithSource.await(chapters, manga, localSource, manualFetch = false)
-
-            // Update progress to show completion
+            // Show progress with chapter count (chapters enumerated, starting sync)
             notifier.showLocalMangaQueueNotification(
-                manga.title,
-                currentManga,
-                totalManga,
+                mangaTitle = manga.title,
+                currentManga = currentManga,
+                totalManga = updatedTotalManga,
                 currentChapter = totalChapters,
                 totalChapters = totalChapters,
             )
 
+            // Sync chapters to database
+            syncChaptersWithSource.await(chapters, manga, localSource, manualFetch = false)
+
             // Update cover last modified to trigger UI refresh for the manga thumbnail
+            // This forces Coil to reload the cover image with the new key
             updateManga.awaitUpdateCoverLastModified(manga.id)
+
+            logcat(LogPriority.DEBUG) { "Completed import for ${manga.title}: $totalChapters chapters" }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to update metadata for local manga: ${manga.title}" }
         }
