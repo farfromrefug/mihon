@@ -91,6 +91,7 @@ import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.isLocal
+import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import kotlin.math.floor
@@ -423,6 +424,11 @@ class MangaScreenModel(
 
                 // Finally match with enhanced tracking when available
                 addTracks.bindEnhancedTrackers(manga, state.source)
+
+                // For local source manga, start background job to prepare metadata/covers
+                if (manga.isLocal()) {
+                    LocalMangaImportJob.startNow(context, manga.id)
+                }
             }
         }
     }
@@ -506,6 +512,11 @@ class MangaScreenModel(
 
         screenModelScope.launchIO {
             updateManga.awaitUpdateFavorite(manga.id, true)
+
+            // For local source manga, start background job to prepare metadata/covers
+            if (manga.isLocal()) {
+                LocalMangaImportJob.startNow(context, manga.id)
+            }
         }
     }
 

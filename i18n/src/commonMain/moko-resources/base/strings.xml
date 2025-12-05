@@ -544,6 +544,8 @@
     <string name="pref_auto_add_local_manga_to_library">Auto-add local manga to library</string>
     <string name="pref_auto_add_local_manga_to_library_summary">Automatically add new manga from local source to library</string>
     <string name="notification_updating_local_chapters">Updating local source: %d/%d chapters</string>
+    <string name="notification_preparing_local_manga">Preparing local manga: %1$s</string>
+    <string name="notification_local_manga_queue">Processing local manga: %1$d/%2$d</string>
     <string name="pref_local_source_manga_folder_template">Manga folder name template</string>
     <string name="pref_local_source_manga_folder_template_summary">Template: {manga_title}</string>
     <string name="pref_local_source_chapter_folder_template">Chapter folder name template</string>

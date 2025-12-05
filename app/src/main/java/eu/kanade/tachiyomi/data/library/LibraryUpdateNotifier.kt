@@ -141,6 +141,42 @@ class LibraryUpdateNotifier(
     }
 
     /**
+     * Shows the notification containing progress for local manga import queue.
+     *
+     * @param mangaTitle the title of the manga being processed.
+     * @param currentManga the current manga index in the queue.
+     * @param totalManga the total number of manga in the queue.
+     */
+    fun showLocalMangaQueueNotification(mangaTitle: String?, currentManga: Int, totalManga: Int) {
+        progressNotificationBuilder
+            .setContentTitle(
+                context.stringResource(
+                    MR.strings.notification_local_manga_queue,
+                    currentManga,
+                    totalManga,
+                ),
+            )
+
+        if (!securityPreferences.hideNotificationContent().get() && mangaTitle != null) {
+            progressNotificationBuilder.setStyle(
+                NotificationCompat.BigTextStyle().bigText(
+                    context.stringResource(
+                        MR.strings.notification_preparing_local_manga,
+                        mangaTitle.chop(40),
+                    ),
+                ),
+            )
+        }
+
+        context.notify(
+            Notifications.ID_LIBRARY_PROGRESS,
+            progressNotificationBuilder
+                .setProgress(totalManga, currentManga, false)
+                .build(),
+        )
+    }
+
+    /**
      * Warn when excessively checking any single source.
      */
     fun showQueueSizeWarningNotificationIfNeeded(mangaToUpdate: List<LibraryManga>) {
