@@ -984,8 +984,10 @@ class MangaScreenModel(
                 message = message,
                 withDismissAction = true,
             )
+            
+            // Clear selection after the operation completes
+            toggleAllSelection(false)
         }
-        toggleAllSelection(false)
     }
 
     /**
