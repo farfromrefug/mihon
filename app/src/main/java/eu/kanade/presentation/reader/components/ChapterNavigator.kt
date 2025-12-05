@@ -52,16 +52,21 @@ fun ChapterNavigator(
     currentPage: Int,
     totalPages: Int,
     onPageIndexChange: (Int) -> Unit,
+    isEinkMode: Boolean = false,
 ) {
     val isTabletUi = isTabletUi()
     val horizontalPadding = if (isTabletUi) 24.dp else 8.dp
     val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     val haptic = LocalHapticFeedback.current
 
-    // Match with toolbar background color set in ReaderActivity
-    val backgroundColor = MaterialTheme.colorScheme
-        .surfaceColorAtElevation(3.dp)
-        .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+    // E-ink mode: use solid white background instead of translucent elevated surface
+    val backgroundColor = if (isEinkMode) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme
+            .surfaceColorAtElevation(3.dp)
+            .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+    }
     val buttonColor = IconButtonDefaults.filledIconButtonColors(
         containerColor = backgroundColor,
         disabledContainerColor = backgroundColor,

@@ -16,7 +16,9 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -58,6 +60,7 @@ import tachiyomi.presentation.core.components.material.NavigationBar
 import tachiyomi.presentation.core.components.material.NavigationRail
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.pluralStringResource
+import tachiyomi.presentation.core.theme.LocalEinkMode
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -191,6 +194,17 @@ object HomeScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
         val selected = tabNavigator.current::class == tab::class
+        val isEinkMode = LocalEinkMode.current
+
+        // E-ink mode: use transparent indicator to remove gray background
+        val colors = if (isEinkMode) {
+            NavigationBarItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.surface,
+            )
+        } else {
+            NavigationBarItemDefaults.colors()
+        }
+
         NavigationBarItem(
             selected = selected,
             onClick = {
@@ -210,6 +224,7 @@ object HomeScreen : Screen() {
                 )
             },
             alwaysShowLabel = true,
+            colors = colors,
         )
     }
 
@@ -219,6 +234,17 @@ object HomeScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
         val selected = tabNavigator.current::class == tab::class
+        val isEinkMode = LocalEinkMode.current
+
+        // E-ink mode: use transparent indicator to remove gray background
+        val colors = if (isEinkMode) {
+            NavigationRailItemDefaults.colors(
+                indicatorColor = MaterialTheme.colorScheme.surface,
+            )
+        } else {
+            NavigationRailItemDefaults.colors()
+        }
+
         NavigationRailItem(
             selected = selected,
             onClick = {
@@ -238,6 +264,7 @@ object HomeScreen : Screen() {
                 )
             },
             alwaysShowLabel = true,
+            colors = colors,
         )
     }
 

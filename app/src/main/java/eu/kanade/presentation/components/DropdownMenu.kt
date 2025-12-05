@@ -1,5 +1,6 @@
 package eu.kanade.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,11 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.theme.LocalEinkMode
 import androidx.compose.material3.DropdownMenu as ComposeDropdownMenu
 
 /**
  * DropdownMenu but overlaps anchor and has width constraints to better
  * match non-Compose implementation.
+ * In E-ink mode, displays with a border and no shadow.
  */
 @Composable
 fun DropdownMenu(
@@ -39,6 +43,16 @@ fun DropdownMenu(
     properties: PopupProperties = PopupProperties(focusable = true),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: add border and remove shadow
+    val border = if (isEinkMode) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    } else {
+        null
+    }
+    val shadowElevation = if (isEinkMode) 0.dp else MenuDefaults.ShadowElevation
+
     ComposeDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
@@ -46,6 +60,8 @@ fun DropdownMenu(
         offset = offset,
         scrollState = scrollState,
         properties = properties,
+        border = border,
+        shadowElevation = shadowElevation,
         content = content,
     )
 }

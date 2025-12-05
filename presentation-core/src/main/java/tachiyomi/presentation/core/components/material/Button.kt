@@ -44,7 +44,7 @@ import androidx.compose.material3.ButtonDefaults as M3ButtonDefaults
 
 /**
  * TextButton with additional onLongClick functionality.
- * In E-ink mode, displays with an outlined border.
+ * In E-ink mode, displays with an outlined border unless [disableEinkBorder] is true.
  *
  * @see androidx.compose.material3.TextButton
  */
@@ -65,12 +65,13 @@ fun TextButton(
         disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA),
     ),
     contentPadding: PaddingValues = M3ButtonDefaults.TextButtonContentPadding,
+    disableEinkBorder: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val isEinkMode = LocalEinkMode.current
 
-    // E-ink mode: add border if not already provided
-    val effectiveBorder = if (isEinkMode && border == null) {
+    // E-ink mode: add border if not already provided and not disabled
+    val effectiveBorder = if (isEinkMode && border == null && !disableEinkBorder) {
         BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     } else {
         border

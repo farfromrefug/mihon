@@ -3,6 +3,8 @@ package tachiyomi.presentation.core.components
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -47,6 +50,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import tachiyomi.presentation.core.theme.LocalEinkMode
 import kotlin.math.roundToInt
 
 @Composable
@@ -59,6 +63,20 @@ fun AdaptiveSheet(
 ) {
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    val isEinkMode = LocalEinkMode.current
+
+    // E-ink mode: add border and use white scrim instead of black
+    val border = if (isEinkMode) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    } else {
+        null
+    }
+    val scrimColor = if (isEinkMode) {
+        Color.White.copy(alpha = 0.6f)
+    } else {
+        Color.Black.copy(alpha = 0.32f)
+    }
+
     if (isTabletUi) {
         var targetAlpha by remember { mutableFloatStateOf(0f) }
         val alpha by animateFloatAsState(
@@ -80,6 +98,7 @@ fun AdaptiveSheet(
                     onClick = internalOnDismissRequest,
                 )
                 .fillMaxSize()
+                .background(scrimColor.copy(alpha = scrimColor.alpha * alpha))
                 .alpha(alpha),
             contentAlignment = Alignment.Center,
         ) {
@@ -96,6 +115,7 @@ fun AdaptiveSheet(
                     .then(modifier),
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = border,
                 content = {
                     BackHandler(
                         enabled = remember { derivedStateOf { alpha > 0f } }.value,
@@ -131,6 +151,7 @@ fun AdaptiveSheet(
                     onClick = internalOnDismissRequest,
                 )
                 .fillMaxSize()
+                .background(scrimColor)
                 .onSizeChanged {
                     val anchors = DraggableAnchors {
                         0 at 0f
@@ -181,6 +202,7 @@ fun AdaptiveSheet(
                     .statusBarsPadding(),
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = border,
                 content = {
                     BackHandler(
                         enabled = anchoredDraggableState.targetValue == 0,

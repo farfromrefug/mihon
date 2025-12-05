@@ -730,6 +730,7 @@ private fun RowScope.MangaActionButton(
         onClick = onClick,
         modifier = Modifier.weight(1f),
         onLongClick = onLongClick,
+        disableEinkBorder = true,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
