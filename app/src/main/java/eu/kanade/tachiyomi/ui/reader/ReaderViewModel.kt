@@ -813,18 +813,6 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     /**
-     * Loads color filter settings for the current chapter if per-chapter saving is enabled.
-     * Returns the per-chapter settings if found, otherwise returns null (use global settings).
-     */
-    suspend fun loadChapterColorFilter(): ChapterColorFilter? {
-        if (!readerPreferences.saveColorFiltersPerChapter().get()) return null
-        val chapterId = getCurrentChapter()?.chapter?.id ?: return null
-        return withIOContext {
-            getChapterColorFilter.await(chapterId)
-        }
-    }
-
-    /**
      * Saves the current color filter settings for the current chapter.
      * Only saves if per-chapter saving is enabled.
      */
