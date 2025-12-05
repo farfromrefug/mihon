@@ -146,8 +146,26 @@ class LibraryUpdateNotifier(
      * @param mangaTitle the title of the manga being processed.
      * @param currentManga the current manga index in the queue.
      * @param totalManga the total number of manga in the queue.
+     * @param currentChapter the current chapter being processed (optional).
+     * @param totalChapters the total number of chapters for current manga (optional).
      */
-    fun showLocalMangaQueueNotification(mangaTitle: String?, currentManga: Int, totalManga: Int) {
+    fun showLocalMangaQueueNotification(
+        mangaTitle: String?,
+        currentManga: Int,
+        totalManga: Int,
+        currentChapter: Int = 0,
+        totalChapters: Int = 0,
+    ) {
+        val chapterProgress = if (totalChapters > 0) {
+            context.stringResource(
+                MR.strings.notification_local_manga_chapters,
+                currentChapter,
+                totalChapters,
+            )
+        } else {
+            null
+        }
+
         progressNotificationBuilder
             .setContentTitle(
                 context.stringResource(
@@ -158,20 +176,38 @@ class LibraryUpdateNotifier(
             )
 
         if (!securityPreferences.hideNotificationContent().get() && mangaTitle != null) {
-            progressNotificationBuilder.setStyle(
-                NotificationCompat.BigTextStyle().bigText(
+            val contentText = buildString {
+                append(
                     context.stringResource(
                         MR.strings.notification_preparing_local_manga,
                         mangaTitle.chop(40),
                     ),
-                ),
+                )
+                if (chapterProgress != null) {
+                    append("\n")
+                    append(chapterProgress)
+                }
+            }
+            progressNotificationBuilder.setStyle(
+                NotificationCompat.BigTextStyle().bigText(contentText),
             )
+        }
+
+        // Calculate overall progress - use chapter progress if available for more granular updates
+        val (progress, maxProgress) = if (totalChapters > 0 && totalManga > 0) {
+            // Calculate weighted progress: (completed manga * 100 + current chapter progress) / total manga
+            val completedMangaWeight = (currentManga - 1) * 100
+            val currentMangaProgress = if (totalChapters > 0) (currentChapter * 100 / totalChapters) else 0
+            val totalWeight = totalManga * 100
+            Pair(completedMangaWeight + currentMangaProgress, totalWeight)
+        } else {
+            Pair(currentManga, totalManga)
         }
 
         context.notify(
             Notifications.ID_LIBRARY_PROGRESS,
             progressNotificationBuilder
-                .setProgress(totalManga, currentManga, false)
+                .setProgress(maxProgress, progress, false)
                 .build(),
         )
     }

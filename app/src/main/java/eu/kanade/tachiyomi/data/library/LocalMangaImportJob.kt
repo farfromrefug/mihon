@@ -123,15 +123,17 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
             val totalCount = processedCount + 1 + remainingInQueue
             val currentPosition = processedCount + 1
 
-            // Show progress notification
+            // Show initial progress notification for this manga
             notifier.showLocalMangaQueueNotification(
                 manga.title,
                 currentPosition,
                 totalCount,
+                currentChapter = 0,
+                totalChapters = 0,
             )
 
             try {
-                prepareMangaMetadata(manga)
+                prepareMangaMetadata(manga, currentPosition, totalCount)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to prepare local manga: ${manga.title}" }
             }
@@ -140,7 +142,7 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
         }
     }
 
-    private suspend fun prepareMangaMetadata(manga: Manga) {
+    private suspend fun prepareMangaMetadata(manga: Manga, currentManga: Int, totalManga: Int) {
         val localSource = sourceManager.get(LocalSource.ID) as? LocalSource ?: return
 
         try {
@@ -150,9 +152,33 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
                 .copyFrom(networkManga)
             updateManga.await(updatedManga.toMangaUpdate())
 
-            // Sync chapters
+            // Get chapters to know the total count
             val chapters = localSource.getChapterList(manga.toSManga())
+            val totalChapters = chapters.size
+
+            // Show progress with chapter count
+            notifier.showLocalMangaQueueNotification(
+                manga.title,
+                currentManga,
+                totalManga,
+                currentChapter = 0,
+                totalChapters = totalChapters,
+            )
+
+            // Sync chapters - this processes them and the notification is updated during sync
             syncChaptersWithSource.await(chapters, manga, localSource, manualFetch = false)
+
+            // Update progress to show completion
+            notifier.showLocalMangaQueueNotification(
+                manga.title,
+                currentManga,
+                totalManga,
+                currentChapter = totalChapters,
+                totalChapters = totalChapters,
+            )
+
+            // Update cover last modified to trigger UI refresh for the manga thumbnail
+            updateManga.awaitUpdateCoverLastModified(manga.id)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to update metadata for local manga: ${manga.title}" }
         }
