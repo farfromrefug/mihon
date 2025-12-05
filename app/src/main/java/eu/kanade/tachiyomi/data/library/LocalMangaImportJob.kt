@@ -35,15 +35,11 @@ import tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.concurrent.atomics.AtomicInt
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.concurrent.atomics.incrementAndFetch
 
 /**
  * Job that handles preparing local manga metadata when they are added to favorites.
  * This job queues multiple manga and processes them one by one, showing progress notifications.
  */
-@OptIn(ExperimentalAtomicApi::class)
 class LocalMangaImportJob(private val context: Context, workerParams: WorkerParameters) :
     CoroutineWorker(context, workerParams) {
 
@@ -102,16 +98,20 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
     }
 
     private suspend fun processQueue() {
-        val progressCount = AtomicInt(0)
+        var processedCount = 0
 
         while (true) {
-            val mangaId = queueMutex.withLock {
+            // Get the next manga and remaining queue size atomically
+            val result = queueMutex.withLock {
                 if (pendingMangaIds.isNotEmpty()) {
-                    pendingMangaIds.removeAt(0)
+                    val id = pendingMangaIds.removeAt(0)
+                    Pair(id, pendingMangaIds.size)
                 } else {
                     null
                 }
             } ?: break
+
+            val (mangaId, remainingInQueue) = result
 
             val manga = getManga.await(mangaId) ?: continue
 
@@ -120,15 +120,15 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
                 continue
             }
 
-            val totalCount = queueMutex.withLock {
-                pendingMangaIds.size + 1
-            }
+            // Total = already processed + current (1) + remaining in queue
+            val totalCount = processedCount + 1 + remainingInQueue
+            val currentPosition = processedCount + 1
 
             // Show progress notification
             notifier.showLocalMangaQueueNotification(
                 manga.title,
-                progressCount.load() + 1,
-                totalCount + progressCount.load(),
+                currentPosition,
+                totalCount,
             )
 
             try {
@@ -137,7 +137,7 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
                 logcat(LogPriority.ERROR, e) { "Failed to prepare local manga: ${manga.title}" }
             }
 
-            progressCount.incrementAndFetch()
+            processedCount++
         }
     }
 
