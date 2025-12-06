@@ -147,7 +147,7 @@ fun PagedBrowseSourceCompactGrid(
         ) {
             items(
                 count = endIndex - startIndex,
-                key = { index -> mangaList[startIndex + index]?.hashCode() ?: index },
+                key = { index -> "browse_compact_${startIndex + index}" },
             ) { index ->
                 val realIndex = startIndex + index
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items
@@ -291,7 +291,7 @@ fun PagedBrowseSourceComfortableGrid(
         ) {
             items(
                 count = endIndex - startIndex,
-                key = { index -> mangaList[startIndex + index]?.hashCode() ?: index },
+                key = { index -> "browse_comfortable_${startIndex + index}" },
             ) { index ->
                 val realIndex = startIndex + index
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items
@@ -423,7 +423,7 @@ fun PagedBrowseSourceList(
         ) {
             items(
                 count = endIndex - startIndex,
-                key = { index -> mangaList[startIndex + index]?.hashCode() ?: index },
+                key = { index -> "browse_list_${startIndex + index}" },
             ) { index ->
                 val realIndex = startIndex + index
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items

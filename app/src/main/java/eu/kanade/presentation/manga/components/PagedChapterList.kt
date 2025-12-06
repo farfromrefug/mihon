@@ -311,7 +311,7 @@ fun PagedChapterGrid(
             },
     ) {
         LazyVerticalGrid(
-            columns = if (actualColumns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(actualColumns),
+            columns = if (actualColumns <= 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(actualColumns),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
