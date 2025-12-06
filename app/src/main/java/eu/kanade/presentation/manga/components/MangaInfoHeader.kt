@@ -175,6 +175,206 @@ fun MangaInfoBox(
     }
 }
 
+/**
+ * Compact version of MangaInfoBox for phone UI.
+ * Shows cover with chapter badge, title/author/status, tags, and description preview.
+ */
+@Composable
+fun MangaInfoBoxCompact(
+    appBarPadding: Dp,
+    manga: Manga,
+    sourceName: String,
+    isStubSource: Boolean,
+    chapterCount: Int,
+    description: String?,
+    tagsProvider: () -> List<String>?,
+    onCoverClick: () -> Unit,
+    onDescriptionClick: () -> Unit,
+    onTagSearch: (String) -> Unit,
+    onCopyTagToClipboard: (tag: String) -> Unit,
+    doSearch: (query: String, global: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val preferences = remember { Injekt.get<UiPreferences>() }
+    val showCoverBackdrop = remember { preferences.showCoverBackdrop().get() }
+
+    Box(modifier = modifier) {
+        // Backdrop
+        if (showCoverBackdrop) {
+            val backdropGradientColors = listOf(
+                Color.Transparent,
+                MaterialTheme.colorScheme.background,
+            )
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush = Brush.verticalGradient(colors = backdropGradientColors),
+                        )
+                    }
+                    .blur(4.dp)
+                    .alpha(0.2f),
+            )
+        }
+
+        // Manga info - compact layout
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            MangaAndSourceTitlesCompact(
+                appBarPadding = appBarPadding,
+                manga = manga,
+                sourceName = sourceName,
+                isStubSource = isStubSource,
+                chapterCount = chapterCount,
+                description = description,
+                tagsProvider = tagsProvider,
+                onCoverClick = onCoverClick,
+                onDescriptionClick = onDescriptionClick,
+                onTagSearch = onTagSearch,
+                onCopyTagToClipboard = onCopyTagToClipboard,
+                doSearch = doSearch,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MangaAndSourceTitlesCompact(
+    appBarPadding: Dp,
+    manga: Manga,
+    sourceName: String,
+    isStubSource: Boolean,
+    chapterCount: Int,
+    description: String?,
+    tagsProvider: () -> List<String>?,
+    onCoverClick: () -> Unit,
+    onDescriptionClick: () -> Unit,
+    onTagSearch: (String) -> Unit,
+    onCopyTagToClipboard: (tag: String) -> Unit,
+    doSearch: (query: String, global: Boolean) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = appBarPadding + 16.dp, end = 16.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            // Cover with chapter badge
+            Box {
+                MangaCover.Book(
+                    modifier = Modifier.sizeIn(maxWidth = 100.dp),
+                    data = ImageRequest.Builder(LocalContext.current)
+                        .data(manga)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(MR.strings.manga_cover),
+                    onClick = onCoverClick,
+                )
+                // Chapter count badge
+                if (chapterCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = MaterialTheme.shapes.small,
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = chapterCount.toString(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                }
+            }
+
+            // Title, author, status, source and tags
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                MangaContentInfo(
+                    title = manga.title,
+                    author = manga.author,
+                    artist = manga.artist,
+                    status = manga.status,
+                    sourceName = sourceName,
+                    isStubSource = isStubSource,
+                    doSearch = doSearch,
+                )
+
+                // Tags row
+                val tags = tagsProvider()
+                if (!tags.isNullOrEmpty()) {
+                    var showMenu by remember { mutableStateOf(false) }
+                    var tagSelected by remember { mutableStateOf("") }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(MR.strings.action_search)) },
+                            onClick = {
+                                onTagSearch(tagSelected)
+                                showMenu = false
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(MR.strings.action_copy_to_clipboard)) },
+                            onClick = {
+                                onCopyTagToClipboard(tagSelected)
+                                showMenu = false
+                            },
+                        )
+                    }
+                    LazyRow(
+                        modifier = Modifier.padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+                    ) {
+                        items(items = tags) { tag ->
+                            TagsChip(
+                                modifier = Modifier.padding(vertical = 2.dp),
+                                text = tag,
+                                onClick = {
+                                    tagSelected = tag
+                                    showMenu = true
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Description preview (1-2 lines, tappable)
+                val desc = description.takeIf { !it.isNullOrBlank() }
+                    ?: stringResource(MR.strings.description_placeholder)
+                Text(
+                    text = desc,
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .clickableNoIndication { onDescriptionClick() }
+                        .secondaryItemAlpha(),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun MangaActionRow(
     favorite: Boolean,

@@ -70,6 +70,7 @@ import eu.kanade.presentation.manga.components.MangaBottomActionMenu
 import eu.kanade.presentation.manga.components.MangaChapterListItem
 import eu.kanade.presentation.manga.components.MangaDescriptionSheet
 import eu.kanade.presentation.manga.components.MangaInfoBox
+import eu.kanade.presentation.manga.components.MangaInfoBoxCompact
 import eu.kanade.presentation.manga.components.MangaToolbar
 import eu.kanade.presentation.manga.components.MangaToolbarCompact
 import eu.kanade.presentation.manga.components.MissingChapterCountListItem
@@ -978,35 +979,24 @@ private fun MangaScreenCompactImpl(
                         key = MangaScreenItem.INFO_BOX,
                         contentType = MangaScreenItem.INFO_BOX,
                     ) {
-                        MangaInfoBox(
-                            isTabletUi = false,
+                        MangaInfoBoxCompact(
                             appBarPadding = topPadding,
                             manga = state.manga,
                             sourceName = remember { state.source.getNameForMangaInfo() },
                             isStubSource = remember { state.source is StubSource },
+                            chapterCount = chapters.size,
+                            description = state.manga.description,
+                            tagsProvider = { state.manga.genre },
                             onCoverClick = onCoverClicked,
+                            onDescriptionClick = { showDescriptionSheet = true },
+                            onTagSearch = onTagSearch,
+                            onCopyTagToClipboard = onCopyTagToClipboard,
                             doSearch = onSearch,
                         )
                     }
 
                     // No action row - buttons are in toolbar
-
-                    // No expandable description - opens in sheet instead
-
-                    item(
-                        key = MangaScreenItem.CHAPTER_HEADER,
-                        contentType = MangaScreenItem.CHAPTER_HEADER,
-                    ) {
-                        val missingChapterCount = remember(chapters) {
-                            chapters.map { it.chapter.chapterNumber }.missingChaptersCount()
-                        }
-                        ChapterHeader(
-                            enabled = !isAnySelected,
-                            chapterCount = chapters.size,
-                            missingChapterCount = missingChapterCount,
-                            onClick = onFilterButtonClicked,
-                        )
-                    }
+                    // No expandable description - tapping description preview opens sheet
 
                     when (chapterDisplayMode) {
                         ChapterDisplayMode.List -> {
