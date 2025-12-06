@@ -118,11 +118,11 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
-        // Shader input name for RenderEffect
+        // Shader input name for RenderEffect - must match the uniform name in the shader
         private const val SHADER_INPUT_NAME = "inputImage"
 
-        // AGSL sharpen shader using a 3x3 sharpening convolution kernel
-        // Uses unsharp mask technique: output = original + scale * (original - blurred)
+        // AGSL sharpen shader using unsharp mask technique with cross-pattern sampling
+        // Uses 4-neighbor blur approximation for efficiency: output = original + scale * (original - blurred)
         // Note: In AGSL/RenderEffect context, coordinates are in pixel space,
         // so offsets of 1 correctly sample adjacent pixels regardless of image size.
         private const val SHARPEN_SHADER = """
@@ -133,14 +133,13 @@ class ReaderActivity : BaseActivity() {
                 // Sample the center pixel
                 half4 center = inputImage.eval(coord);
                 
-                // Sample neighboring pixels (simple 3x3 kernel)
-                // Offset of 1 pixel in each direction for edge detection
+                // Sample 4 neighboring pixels in cross pattern for edge detection
                 half4 top = inputImage.eval(coord + float2(0, -1));
                 half4 bottom = inputImage.eval(coord + float2(0, 1));
                 half4 left = inputImage.eval(coord + float2(-1, 0));
                 half4 right = inputImage.eval(coord + float2(1, 0));
                 
-                // Calculate the average of neighbors (simple blur approximation)
+                // Calculate the average of 4 neighbors (cross-pattern blur approximation)
                 half4 blur = (top + bottom + left + right) / 4.0;
                 
                 // Unsharp mask: output = original + scale * (original - blurred)
