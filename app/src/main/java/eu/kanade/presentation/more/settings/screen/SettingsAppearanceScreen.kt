@@ -128,9 +128,9 @@ object SettingsAppearanceScreen : SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.compactMangaDetailsTablet(),
-                    title = stringResource(MR.strings.pref_compact_manga_details_tablet),
-                    subtitle = stringResource(MR.strings.pref_compact_manga_details_tablet_summary),
+                    preference = uiPreferences.compactMangaDetails(),
+                    title = stringResource(MR.strings.pref_compact_manga_details),
+                    subtitle = stringResource(MR.strings.pref_compact_manga_details_summary),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = uiPreferences.dateFormat(),

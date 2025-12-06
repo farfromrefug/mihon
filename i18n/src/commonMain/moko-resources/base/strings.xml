@@ -657,8 +657,8 @@
     <string name="battery_optimization_setting_activity_not_found">Couldn\'t open device settings</string>
     <string name="about_dont_kill_my_app">Some manufacturers have additional app restrictions that kill background services. This website has more info on how to fix it.</string>
     <string name="pref_tablet_ui_mode">Tablet UI</string>
-    <string name="pref_compact_manga_details_tablet">Compact manga details (tablet)</string>
-    <string name="pref_compact_manga_details_tablet_summary">Shows manga info next to cover, with description in a sheet</string>
+    <string name="pref_compact_manga_details">Compact manga details</string>
+    <string name="pref_compact_manga_details_summary">Opens description in a sheet instead of expanding inline, giving more room for chapters</string>
     <string name="pref_verbose_logging">Verbose logging</string>
     <string name="pref_verbose_logging_summary">Print verbose logs to system log (reduces app performance)</string>
     <string name="pref_debug_info">Debug info</string>

@@ -107,9 +107,9 @@ class MangaScreen(
         val chapterGridLandscapeColumns by screenModel.chapterGridLandscapeColumns.collectAsState()
         val chapterGridColumns = if (isLandscape) chapterGridLandscapeColumns else chapterGridPortraitColumns
 
-        // Get compact tablet UI preference
+        // Get compact manga details preference
         val uiPreferences = remember { Injekt.get<UiPreferences>() }
-        val isCompactTabletUi by uiPreferences.compactMangaDetailsTablet().collectAsState()
+        val isCompactMangaDetails by uiPreferences.compactMangaDetails().collectAsState()
 
         if (state is MangaScreenModel.State.Loading) {
             LoadingScreen()
@@ -136,7 +136,7 @@ class MangaScreen(
             snackbarHostState = screenModel.snackbarHostState,
             nextUpdate = successState.manga.expectedNextUpdate,
             isTabletUi = isTabletUi(),
-            isCompactTabletUi = isCompactTabletUi,
+            isCompactMangaDetails = isCompactMangaDetails,
             chapterSwipeStartAction = screenModel.chapterSwipeStartAction,
             chapterSwipeEndAction = screenModel.chapterSwipeEndAction,
             chapterDisplayMode = chapterDisplayMode,
