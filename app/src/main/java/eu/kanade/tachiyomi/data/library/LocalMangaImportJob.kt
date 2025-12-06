@@ -156,23 +156,25 @@ class LocalMangaImportJob(private val context: Context, workerParams: WorkerPara
                 .copyFrom(networkManga)
             updateManga.await(updatedManga.toMangaUpdate())
 
-            // Get chapters - this does the heavy processing
-            val chapters = localSource.getChapterList(manga.toSManga())
-            val totalChapters = chapters.size
-
-            // Re-check queue size in case more items were added
-            val updatedTotalManga = queueMutex.withLock {
-                currentManga + pendingMangaIds.size
+            // Get chapters with progress callback - this does the heavy processing
+            val chapters = localSource.getChapterList(manga.toSManga()) { processed, total ->
+                // Re-check queue size in case more items were added
+                val updatedTotalManga = kotlinx.coroutines.runBlocking {
+                    queueMutex.withLock {
+                        currentManga + pendingMangaIds.size
+                    }
+                }
+                
+                // Update notification with chapter progress
+                notifier.showLocalMangaQueueNotification(
+                    mangaTitle = manga.title,
+                    currentManga = currentManga,
+                    totalManga = updatedTotalManga,
+                    currentChapter = processed,
+                    totalChapters = total,
+                )
             }
-
-            // Show progress with chapter count (chapters enumerated, starting sync)
-            notifier.showLocalMangaQueueNotification(
-                mangaTitle = manga.title,
-                currentManga = currentManga,
-                totalManga = updatedTotalManga,
-                currentChapter = totalChapters,
-                totalChapters = totalChapters,
-            )
+            val totalChapters = chapters.size
 
             // Sync chapters to database
             syncChaptersWithSource.await(chapters, manga, localSource, manualFetch = false)

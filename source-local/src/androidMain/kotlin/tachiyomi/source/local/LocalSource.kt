@@ -17,7 +17,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -275,9 +277,13 @@ actual class LocalSource(
      * memory issues and UI blocking.
      *
      * @param manga The manga to get chapters for
+     * @param onProgress Optional callback for progress updates (processedCount, totalCount)
      * @return List of chapters sorted by name
      */
-    override suspend fun getChapterList(manga: SManga): List<SChapter> = withIOContext {
+    suspend fun getChapterList(
+        manga: SManga,
+        onProgress: ((processed: Int, total: Int) -> Unit)? = null,
+    ): List<SChapter> = withIOContext {
         val mangaDir = fileSystem.getMangaDirectory(manga.url)
         val mangaDirPath = mangaDir?.displayablePath ?: manga.url
         
@@ -298,7 +304,18 @@ actual class LocalSource(
         val concurrency = libraryPreferences.localSourceChapterProcessingWorkers().get()
             .coerceIn(1, MAX_CHAPTER_PROCESSING_CONCURRENCY)
         val semaphore = Semaphore(concurrency)
+        
+        // Thread-safe cover generation flag using Mutex
+        val coverMutex = Mutex()
         var coverGenerated = false
+        
+        // Thread-safe progress counter
+        val progressMutex = Mutex()
+        var processedCount = 0
+        val totalCount = chapterFiles.size
+        
+        // Initial progress callback
+        onProgress?.invoke(0, totalCount)
         
         val chapters = coroutineScope {
             chapterFiles.map { chapterFile ->
@@ -307,14 +324,25 @@ actual class LocalSource(
                         ensureActive()
                         processChapterFile(manga, mangaDir, chapterFile).also { chapter ->
                             // Generate cover.jpg early from first successfully processed chapter
-                            if (!coverGenerated && manga.thumbnail_url.isNullOrBlank() && chapter != null) {
-                                try {
-                                    updateCover(chapter, manga)
-                                    coverGenerated = true
-                                    logcat(LogPriority.DEBUG) { "Generated cover.jpg for ${manga.title}" }
-                                } catch (e: Exception) {
-                                    logcat(LogPriority.WARN, e) { "Failed to generate cover for ${manga.title}" }
+                            // Use mutex to prevent race condition where multiple threads try to write cover.jpg
+                            if (manga.thumbnail_url.isNullOrBlank() && chapter != null) {
+                                coverMutex.withLock {
+                                    if (!coverGenerated) {
+                                        try {
+                                            updateCover(chapter, manga)
+                                            coverGenerated = true
+                                            logcat(LogPriority.DEBUG) { "Generated cover.jpg for ${manga.title}" }
+                                        } catch (e: Exception) {
+                                            logcat(LogPriority.WARN, e) { "Failed to generate cover for ${manga.title}" }
+                                        }
+                                    }
                                 }
+                            }
+                            
+                            // Update progress
+                            progressMutex.withLock {
+                                processedCount++
+                                onProgress?.invoke(processedCount, totalCount)
                             }
                         }
                     }
@@ -328,6 +356,11 @@ actual class LocalSource(
         logcat(LogPriority.DEBUG) { "Completed processing ${chapters.size} chapters for ${manga.title}" }
         chapters
     }
+    
+    /**
+     * Override without progress callback for interface compatibility.
+     */
+    override suspend fun getChapterList(manga: SManga): List<SChapter> = getChapterList(manga, null)
 
     /**
      * Process a single chapter file with error handling.
@@ -432,6 +465,9 @@ actual class LocalSource(
             .coerceIn(1, MAX_CHAPTER_PROCESSING_CONCURRENCY)
         val semaphore = Semaphore(concurrency)
         val processedChapters = mutableListOf<SChapter>()
+        
+        // Thread-safe cover generation flag using Mutex
+        val coverMutex = Mutex()
         var coverGenerated = false
 
         withIOContext {
@@ -445,14 +481,17 @@ actual class LocalSource(
                                     processedChapters.add(chapter)
                                 }
                                 
-                                // Generate cover.jpg early (exception intentionally caught and ignored
-                                // as cover generation is best-effort and shouldn't block chapter processing)
-                                if (!coverGenerated && manga.thumbnail_url.isNullOrBlank()) {
-                                    try {
-                                        updateCover(chapter, manga)
-                                        coverGenerated = true
-                                    } catch (_: Exception) {
-                                        // Cover generation failed, will try with next chapter
+                                // Generate cover.jpg early with mutex to prevent race condition
+                                if (manga.thumbnail_url.isNullOrBlank()) {
+                                    coverMutex.withLock {
+                                        if (!coverGenerated) {
+                                            try {
+                                                updateCover(chapter, manga)
+                                                coverGenerated = true
+                                            } catch (_: Exception) {
+                                                // Cover generation failed, will try with next chapter
+                                            }
+                                        }
                                     }
                                 }
                             }
