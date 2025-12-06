@@ -782,13 +782,11 @@ private fun TagsChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-        SuggestionChip(
-            modifier = modifier,
-            onClick = onClick,
-            label = { Text(text = text, style = MaterialTheme.typography.bodySmall) },
-        )
-    }
+    MangaTagsChip(
+        text = text,
+        modifier = modifier,
+        onClick = onClick,
+    )
 }
 
 @Composable

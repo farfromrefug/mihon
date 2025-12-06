@@ -109,7 +109,7 @@ class MangaScreen(
 
         // Get compact tablet UI preference
         val uiPreferences = remember { Injekt.get<UiPreferences>() }
-        val isCompactTabletUi = remember { uiPreferences.compactMangaDetailsTablet().get() }
+        val isCompactTabletUi by uiPreferences.compactMangaDetailsTablet().collectAsState()
 
         if (state is MangaScreenModel.State.Loading) {
             LoadingScreen()
