@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -31,16 +32,19 @@ import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
+import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
+import eu.kanade.tachiyomi.util.editCover
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
@@ -57,6 +61,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.domain.chapter.interactor.FilterChaptersForDownload
+import okhttp3.Call
+import okhttp3.Request
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.TriState
@@ -90,10 +96,11 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.isLocal
-import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.io.File
 import kotlin.math.floor
 
 class MangaScreenModel(
@@ -898,6 +905,95 @@ class MangaScreenModel(
                 .let { updateChapter.awaitAll(it) }
         }
         toggleAllSelection(false)
+    }
+
+    /**
+     * Result enum for setting chapter cover as manga cover.
+     */
+    enum class SetAsCoverResult {
+        Success,
+        AddToLibraryFirst,
+        Error,
+    }
+
+    /**
+     * Sets the cover of a chapter as the manga cover.
+     * @param chapter the chapter whose cover should be used.
+     */
+    fun setChapterCoverAsMangaCover(chapter: Chapter) {
+        val manga = successState?.manga ?: return
+        val coverUrl = chapter.coverUrl
+        if (coverUrl.isNullOrEmpty()) {
+            screenModelScope.launch {
+                snackbarHostState.showSnackbar(
+                    message = context.stringResource(MR.strings.notification_cover_update_failed),
+                    withDismissAction = true,
+                )
+            }
+            return
+        }
+
+        screenModelScope.launchIO {
+            val coverCache: CoverCache = Injekt.get()
+            val coverManager: LocalCoverManager = Injekt.get()
+            
+            val result = try {
+                val inputStream = when {
+                    coverUrl.startsWith("http://") || coverUrl.startsWith("https://") -> {
+                        // For HTTP URLs, use OkHttp to fetch the image
+                        val client = Injekt.get<Call.Factory>()
+                        val request = Request.Builder().url(coverUrl).build()
+                        val response = client.newCall(request).execute()
+                        if (!response.isSuccessful) {
+                            response.close()
+                            throw Exception("Failed to fetch cover: ${response.code}")
+                        }
+                        response.body.byteStream()
+                    }
+                    coverUrl.startsWith("content://") -> {
+                        // For content URIs, use content resolver
+                        context.contentResolver.openInputStream(Uri.parse(coverUrl))
+                            ?: throw Exception("Cannot open content URI")
+                    }
+                    else -> {
+                        // For local files
+                        val file = if (coverUrl.startsWith("file://")) {
+                            File(coverUrl.substringAfter("file://"))
+                        } else {
+                            File(coverUrl)
+                        }
+                        file.inputStream()
+                    }
+                }
+
+                inputStream.use { stream ->
+                    manga.editCover(coverManager, stream, updateManga, coverCache)
+                }
+
+                if (manga.isLocal() || manga.favorite) {
+                    SetAsCoverResult.Success
+                } else {
+                    SetAsCoverResult.AddToLibraryFirst
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Error setting chapter cover as manga cover" }
+                SetAsCoverResult.Error
+            }
+
+            val message = when (result) {
+                SetAsCoverResult.Success -> context.stringResource(MR.strings.cover_updated)
+                SetAsCoverResult.AddToLibraryFirst -> context.stringResource(MR.strings.notification_first_add_to_library)
+                SetAsCoverResult.Error -> context.stringResource(MR.strings.notification_cover_update_failed)
+            }
+
+            snackbarHostState.showSnackbar(
+                message = message,
+                withDismissAction = true,
+            )
+            
+            // Clear selection after the operation completes
+            toggleAllSelection(false)
+        }
     }
 
     /**
