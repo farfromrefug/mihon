@@ -240,7 +240,7 @@ private fun MangaGridCover(
 ) {
     Box(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxHeight()
             .aspectRatio(MangaCover.Book.ratio),
     ) {
         cover()

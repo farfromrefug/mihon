@@ -350,7 +350,7 @@ private fun ChapterGridCover(
 ) {
     Box(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxHeight()
             .aspectRatio(eu.kanade.presentation.manga.components.MangaCover.Book.ratio),
     ) {
         cover()

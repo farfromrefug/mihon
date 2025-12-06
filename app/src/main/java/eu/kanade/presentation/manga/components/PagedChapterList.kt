@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -253,21 +255,26 @@ fun PagedChapterGrid(
 
     val actualColumns = if (columns <= 0) 3 else columns
 
-    val itemsPerPage by remember(containerHeight, actualColumns) {
+    // Obtain the Pair from the delegated state, then destructure it.
+    val itemsAndMax by remember(containerHeight, actualColumns) {
         derivedStateOf {
             if (containerHeight <= 0) {
-                actualColumns * 3
+                val defaultRows = 3
+                val defaultItems = actualColumns * defaultRows
+                defaultItems to CHAPTER_ITEM_HEIGHT_GRID
             } else {
                 val availableHeight = with(density) {
                     containerHeight.toDp() - contentPadding.calculateTopPadding() -
-                        contentPadding.calculateBottomPadding() - PAGE_INDICATOR_HEIGHT - SAFETY_MARGIN
+                        contentPadding.calculateBottomPadding() - PAGE_INDICATOR_HEIGHT - PAGE_INDICATOR_HEIGHT - SAFETY_MARGIN
                 }
                 val rowHeight = CHAPTER_ITEM_HEIGHT_GRID + 8.dp
                 val rows = max(1, (availableHeight / rowHeight).toInt())
-                rows * actualColumns
+                val rowMax = availableHeight / rows.toFloat()
+                (rows * actualColumns) to rowMax
             }
         }
     }
+    val (itemsPerPage, rowMaxHeight) = itemsAndMax
 
     val totalPages by remember(chapterItems.size, itemsPerPage) {
         derivedStateOf { max(1, ceil(chapterItems.size.toDouble() / itemsPerPage).toInt()) }
@@ -349,6 +356,7 @@ fun PagedChapterGrid(
                     item.chapter.name
                 }
 
+                Box(modifier = Modifier.heightIn(max = rowMaxHeight)) {
                 when (chapterDisplayMode) {
                     ChapterDisplayMode.CompactGrid -> {
                         ChapterCompactGridItem(
@@ -410,6 +418,7 @@ fun PagedChapterGrid(
                     }
                     else -> {}
                 }
+                    }
             }
         }
 
@@ -417,7 +426,7 @@ fun PagedChapterGrid(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = contentPadding.calculateBottomPadding(), top = 8.dp),
+                    .padding(bottom = 8.dp, top = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 PageIndicator(

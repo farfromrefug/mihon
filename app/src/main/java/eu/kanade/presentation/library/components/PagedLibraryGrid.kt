@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,9 +33,14 @@ import eu.kanade.tachiyomi.ui.library.LibraryItem
 import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.presentation.core.components.PageIndicator
+import kotlin.compareTo
+import kotlin.div
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.text.toFloat
+import kotlin.text.toInt
+import kotlin.times
 
 // Default items per page values - these are fallbacks when container size cannot be measured
 private const val ITEMS_PER_PAGE_DEFAULT = 12
@@ -78,10 +84,13 @@ internal fun PagedLibraryCompactGrid(
 
     val actualColumns = if (columns <= 0) 3 else columns
 
-    val itemsPerPage by remember(containerHeight, actualColumns) {
+    // Obtain the Pair from the delegated state, then destructure it.
+    val itemsAndMax by remember(containerHeight, actualColumns) {
         derivedStateOf {
             if (containerHeight <= 0) {
-                actualColumns * 3
+                val defaultRows = 3
+                val defaultItems = actualColumns * defaultRows
+                defaultItems to ITEM_HEIGHT_GRID
             } else {
                 val availableHeight = with(density) {
                     containerHeight.toDp() - contentPadding.calculateTopPadding() -
@@ -89,10 +98,12 @@ internal fun PagedLibraryCompactGrid(
                 }
                 val rowHeight = ITEM_HEIGHT_GRID + CommonMangaItemDefaults.GridVerticalSpacer
                 val rows = max(1, (availableHeight / rowHeight).toInt())
-                rows * actualColumns
+                val rowMax = availableHeight / rows.toFloat()
+                (rows * actualColumns) to rowMax
             }
         }
     }
+    val (itemsPerPage, rowMaxHeight) = itemsAndMax
 
     val totalPages by remember(items.size, itemsPerPage) {
         derivedStateOf { max(1, ceil(items.size.toDouble() / itemsPerPage).toInt()) }
@@ -171,34 +182,36 @@ internal fun PagedLibraryCompactGrid(
                     contentType = { "paged_library_compact_grid_item" },
                 ) { libraryItem ->
                     val manga = libraryItem.libraryManga.manga
-                    MangaCompactGridItem(
-                        isSelected = manga.id in selection,
-                        title = manga.title.takeIf { showTitle },
-                        coverData = MangaCover(
-                            mangaId = manga.id,
-                            sourceId = manga.source,
-                            isMangaFavorite = manga.favorite,
-                            url = manga.thumbnailUrl,
-                            lastModified = manga.coverLastModified,
-                        ),
-                        coverBadgeStart = {
-                            DownloadsBadge(count = libraryItem.downloadCount)
-                            UnreadBadge(count = libraryItem.unreadCount)
-                        },
-                        coverBadgeEnd = {
-                            LanguageBadge(
-                                isLocal = libraryItem.isLocal,
-                                sourceLanguage = libraryItem.sourceLanguage,
-                            )
-                        },
-                        onLongClick = { onLongClick(libraryItem.libraryManga) },
-                        onClick = { onClick(libraryItem.libraryManga) },
-                        onClickContinueReading = if (onClickContinueReading != null && libraryItem.unreadCount > 0) {
-                            { onClickContinueReading(libraryItem.libraryManga) }
-                        } else {
-                            null
-                        },
-                    )
+                    Box(modifier = Modifier.heightIn(max = rowMaxHeight)) {
+                        MangaCompactGridItem(
+                            isSelected = manga.id in selection,
+                            title = manga.title.takeIf { showTitle },
+                            coverData = MangaCover(
+                                mangaId = manga.id,
+                                sourceId = manga.source,
+                                isMangaFavorite = manga.favorite,
+                                url = manga.thumbnailUrl,
+                                lastModified = manga.coverLastModified,
+                            ),
+                            coverBadgeStart = {
+                                DownloadsBadge(count = libraryItem.downloadCount)
+                                UnreadBadge(count = libraryItem.unreadCount)
+                            },
+                            coverBadgeEnd = {
+                                LanguageBadge(
+                                    isLocal = libraryItem.isLocal,
+                                    sourceLanguage = libraryItem.sourceLanguage,
+                                )
+                            },
+                            onLongClick = { onLongClick(libraryItem.libraryManga) },
+                            onClick = { onClick(libraryItem.libraryManga) },
+                            onClickContinueReading = if (onClickContinueReading != null && libraryItem.unreadCount > 0) {
+                                { onClickContinueReading(libraryItem.libraryManga) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -239,22 +252,26 @@ internal fun PagedLibraryComfortableGrid(
 
     val actualColumns = if (columns <= 0) 3 else columns
 
-    val itemsPerPage by remember(containerHeight, actualColumns) {
+    // Obtain the Pair from the delegated state, then destructure it.
+    val itemsAndMax by remember(containerHeight, actualColumns) {
         derivedStateOf {
             if (containerHeight <= 0) {
-                actualColumns * 3
+                val defaultRows = 3
+                val defaultItems = actualColumns * defaultRows
+                defaultItems to ITEM_HEIGHT_GRID
             } else {
                 val availableHeight = with(density) {
                     containerHeight.toDp() - contentPadding.calculateTopPadding() -
                         contentPadding.calculateBottomPadding() - PAGE_INDICATOR_HEIGHT - SAFETY_MARGIN
                 }
-                // Comfortable grid items are taller due to title below
-                val rowHeight = ITEM_HEIGHT_GRID + COMFORTABLE_GRID_TITLE_HEIGHT + CommonMangaItemDefaults.GridVerticalSpacer
+                val rowHeight = ITEM_HEIGHT_GRID + CommonMangaItemDefaults.GridVerticalSpacer
                 val rows = max(1, (availableHeight / rowHeight).toInt())
-                rows * actualColumns
+                val rowMax = availableHeight / rows.toFloat()
+                (rows * actualColumns) to rowMax
             }
         }
     }
+    val (itemsPerPage, rowMaxHeight) = itemsAndMax
 
     val totalPages by remember(items.size, itemsPerPage) {
         derivedStateOf { max(1, ceil(items.size.toDouble() / itemsPerPage).toInt()) }
@@ -333,34 +350,36 @@ internal fun PagedLibraryComfortableGrid(
                     contentType = { "paged_library_comfortable_grid_item" },
                 ) { libraryItem ->
                     val manga = libraryItem.libraryManga.manga
-                    MangaComfortableGridItem(
-                        isSelected = manga.id in selection,
-                        title = manga.title,
-                        coverData = MangaCover(
-                            mangaId = manga.id,
-                            sourceId = manga.source,
-                            isMangaFavorite = manga.favorite,
-                            url = manga.thumbnailUrl,
-                            lastModified = manga.coverLastModified,
-                        ),
-                        coverBadgeStart = {
-                            DownloadsBadge(count = libraryItem.downloadCount)
-                            UnreadBadge(count = libraryItem.unreadCount)
-                        },
-                        coverBadgeEnd = {
-                            LanguageBadge(
-                                isLocal = libraryItem.isLocal,
-                                sourceLanguage = libraryItem.sourceLanguage,
-                            )
-                        },
-                        onLongClick = { onLongClick(libraryItem.libraryManga) },
-                        onClick = { onClick(libraryItem.libraryManga) },
-                        onClickContinueReading = if (onClickContinueReading != null && libraryItem.unreadCount > 0) {
-                            { onClickContinueReading(libraryItem.libraryManga) }
-                        } else {
-                            null
-                        },
-                    )
+                    Box(modifier = Modifier.heightIn(max = rowMaxHeight)) {
+                        MangaComfortableGridItem(
+                            isSelected = manga.id in selection,
+                            title = manga.title,
+                            coverData = MangaCover(
+                                mangaId = manga.id,
+                                sourceId = manga.source,
+                                isMangaFavorite = manga.favorite,
+                                url = manga.thumbnailUrl,
+                                lastModified = manga.coverLastModified,
+                            ),
+                            coverBadgeStart = {
+                                DownloadsBadge(count = libraryItem.downloadCount)
+                                UnreadBadge(count = libraryItem.unreadCount)
+                            },
+                            coverBadgeEnd = {
+                                LanguageBadge(
+                                    isLocal = libraryItem.isLocal,
+                                    sourceLanguage = libraryItem.sourceLanguage,
+                                )
+                            },
+                            onLongClick = { onLongClick(libraryItem.libraryManga) },
+                            onClick = { onClick(libraryItem.libraryManga) },
+                            onClickContinueReading = if (onClickContinueReading != null && libraryItem.unreadCount > 0) {
+                                { onClickContinueReading(libraryItem.libraryManga) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
                 }
             }
         }
