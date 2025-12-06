@@ -61,8 +61,11 @@ import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.chapter.interactor.GetChapterColorFilter
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
+import tachiyomi.domain.chapter.interactor.SetChapterColorFilter
 import tachiyomi.domain.chapter.interactor.UpdateChapter
+import tachiyomi.domain.chapter.model.ChapterColorFilter
 import tachiyomi.domain.chapter.model.ChapterUpdate
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.download.service.DownloadPreferences
@@ -101,6 +104,8 @@ class ReaderViewModel @JvmOverloads constructor(
     private val setMangaViewerFlags: SetMangaViewerFlags = Injekt.get(),
     private val getIncognitoState: GetIncognitoState = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
+    private val getChapterColorFilter: GetChapterColorFilter = Injekt.get(),
+    private val setChapterColorFilter: SetChapterColorFilter = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -333,6 +338,16 @@ class ReaderViewModel @JvmOverloads constructor(
                 )
             }
         }
+
+        // Load chapter-specific color filter if enabled
+        if (readerPreferences.saveColorFiltersPerChapter().get()) {
+            val chapterId = chapter.chapter.id
+            if (chapterId != null) {
+                val colorFilter = getChapterColorFilter.await(chapterId)
+                eventChannel.trySend(Event.LoadChapterColorFilter(colorFilter))
+            }
+        }
+
         return newChapters
     }
 
@@ -798,6 +813,52 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     /**
+     * Saves the current color filter settings for the current chapter.
+     * Only saves if per-chapter saving is enabled.
+     */
+    fun saveChapterColorFilter(colorFilter: ChapterColorFilter) {
+        if (!readerPreferences.saveColorFiltersPerChapter().get()) return
+        viewModelScope.launchIO {
+            setChapterColorFilter.await(colorFilter)
+        }
+    }
+
+    /**
+     * Creates a ChapterColorFilter from the current global preferences.
+     */
+    fun createColorFilterFromPreferences(): ChapterColorFilter? {
+        val chapterId = getCurrentChapter()?.chapter?.id ?: return null
+        return ChapterColorFilter(
+            chapterId = chapterId,
+            customBrightness = readerPreferences.customBrightness().get(),
+            customBrightnessValue = readerPreferences.customBrightnessValue().get(),
+            colorFilter = readerPreferences.colorFilter().get(),
+            colorFilterValue = readerPreferences.colorFilterValue().get(),
+            colorFilterMode = readerPreferences.colorFilterMode().get(),
+            grayscale = readerPreferences.grayscale().get(),
+            invertedColors = readerPreferences.invertedColors().get(),
+            sharpenFilter = readerPreferences.sharpenFilter().get(),
+            sharpenFilterScale = readerPreferences.sharpenFilterScale().get(),
+        )
+    }
+
+    /**
+     * Applies color filter settings from a ChapterColorFilter to the global preferences.
+     * This is used to load per-chapter settings when switching chapters.
+     */
+    fun applyColorFilterToPreferences(colorFilter: ChapterColorFilter) {
+        readerPreferences.customBrightness().set(colorFilter.customBrightness)
+        readerPreferences.customBrightnessValue().set(colorFilter.customBrightnessValue)
+        readerPreferences.colorFilter().set(colorFilter.colorFilter)
+        readerPreferences.colorFilterValue().set(colorFilter.colorFilterValue)
+        readerPreferences.colorFilterMode().set(colorFilter.colorFilterMode)
+        readerPreferences.grayscale().set(colorFilter.grayscale)
+        readerPreferences.invertedColors().set(colorFilter.invertedColors)
+        readerPreferences.sharpenFilter().set(colorFilter.sharpenFilter)
+        readerPreferences.sharpenFilterScale().set(colorFilter.sharpenFilterScale)
+    }
+
+    /**
      * Saves the image of the selected page on the pictures directory and notifies the UI of the result.
      * There's also a notification to allow sharing the image somewhere else or deleting it.
      */
@@ -990,5 +1051,11 @@ class ReaderViewModel @JvmOverloads constructor(
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
+
+        /**
+         * Event to signal that chapter-specific color filters should be loaded.
+         * Includes the filter settings if found, or null to use global settings.
+         */
+        data class LoadChapterColorFilter(val colorFilter: ChapterColorFilter?) : Event
     }
 }

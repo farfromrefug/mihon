@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import tachiyomi.domain.chapter.model.ChapterColorFilter
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -15,6 +16,7 @@ class ReaderSettingsScreenModel(
     readerState: StateFlow<ReaderViewModel.State>,
     val onChangeReadingMode: (ReadingMode) -> Unit,
     val onChangeOrientation: (ReaderOrientation) -> Unit,
+    val onSaveChapterColorFilter: () -> Unit = {},
     val preferences: ReaderPreferences = Injekt.get(),
 ) : ScreenModel {
 
@@ -25,6 +27,11 @@ class ReaderSettingsScreenModel(
 
     val mangaFlow = readerState
         .map { it.manga }
+        .distinctUntilChanged()
+        .stateIn(ioCoroutineScope, SharingStarted.Lazily, null)
+
+    val chapterIdFlow = readerState
+        .map { it.currentChapter?.chapter?.id }
         .distinctUntilChanged()
         .stateIn(ioCoroutineScope, SharingStarted.Lazily, null)
 }

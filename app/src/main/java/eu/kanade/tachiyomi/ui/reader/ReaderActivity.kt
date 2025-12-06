@@ -10,6 +10,8 @@ import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.RenderEffect
+import android.graphics.RuntimeShader
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +23,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -114,6 +117,38 @@ class ReaderActivity : BaseActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
         }
+
+        // Shader input name for RenderEffect - must match the uniform name in the shader
+        private const val SHADER_INPUT_NAME = "inputImage"
+
+        // AGSL sharpen shader using unsharp mask technique with cross-pattern sampling
+        // Uses 4-neighbor blur approximation for efficiency: output = original + scale * (original - blurred)
+        // Note: In AGSL/RenderEffect context, coordinates are in pixel space,
+        // so offsets of 1 correctly sample adjacent pixels regardless of image size.
+        private const val SHARPEN_SHADER = """
+            uniform shader inputImage;
+            uniform float scale;
+            
+            half4 main(float2 coord) {
+                // Sample the center pixel
+                half4 center = inputImage.eval(coord);
+                
+                // Sample 4 neighboring pixels in cross pattern for edge detection
+                half4 top = inputImage.eval(coord + float2(0, -1));
+                half4 bottom = inputImage.eval(coord + float2(0, 1));
+                half4 left = inputImage.eval(coord + float2(-1, 0));
+                half4 right = inputImage.eval(coord + float2(1, 0));
+                
+                // Calculate the average of 4 neighbors (cross-pattern blur approximation)
+                half4 blur = (top + bottom + left + right) / 4.0;
+                
+                // Unsharp mask: output = original + scale * (original - blurred)
+                half4 sharpened = center + scale * (center - blur);
+                
+                // Clamp to valid color range and preserve alpha
+                return half4(clamp(sharpened.rgb, half3(0.0), half3(1.0)), center.a);
+            }
+        """
     }
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
@@ -241,6 +276,9 @@ class ReaderActivity : BaseActivity() {
                     is ReaderViewModel.Event.SetCoverResult -> {
                         onSetAsCoverResult(event.result)
                     }
+                    is ReaderViewModel.Event.LoadChapterColorFilter -> {
+                        event.colorFilter?.let { viewModel.applyColorFilterToPreferences(it) }
+                    }
                 }
             }
             .launchIn(lifecycleScope)
@@ -254,6 +292,11 @@ class ReaderActivity : BaseActivity() {
                 readerState = viewModel.state,
                 onChangeReadingMode = viewModel::setMangaReadingMode,
                 onChangeOrientation = viewModel::setMangaOrientationType,
+                onSaveChapterColorFilter = {
+                    viewModel.createColorFilterFromPreferences()?.let { colorFilter ->
+                        viewModel.saveChapterColorFilter(colorFilter)
+                    }
+                },
             )
         }
 
@@ -871,6 +914,18 @@ class ReaderActivity : BaseActivity() {
                 }
                 .launchIn(lifecycleScope)
 
+            // Sharpen filter (API 31+ with fallback, API 33+ for true sharpening)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                combine(
+                    readerPreferences.sharpenFilter().changes(),
+                    readerPreferences.sharpenFilterScale().changes(),
+                ) { enabled, scale -> enabled to scale }
+                    .onEach { (enabled, scale) ->
+                        setSharpenEffect(enabled, scale)
+                    }
+                    .launchIn(lifecycleScope)
+            }
+
             combine(
                 readerPreferences.fullscreen().changes(),
                 readerPreferences.drawUnderCutout().changes(),
@@ -960,6 +1015,50 @@ class ReaderActivity : BaseActivity() {
         private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
             val paint = if (grayscale || invertedColors) getCombinedPaint(grayscale, invertedColors) else null
             binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)
+        }
+
+        /**
+         * Sets the sharpen effect on the viewer container.
+         * - API 33+ (Android 13+): Uses RuntimeShader for true image sharpening via unsharp mask
+         * - API 31-32 (Android 12-12L): Falls back to contrast enhancement via ColorMatrix
+         * 
+         * @param enabled Whether the sharpen filter is enabled
+         * @param scale The sharpen intensity (0.0 to 2.0, validated by preferences slider)
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        private fun setSharpenEffect(enabled: Boolean, scale: Float) {
+            // Disable effect when not enabled or scale is 0 (no sharpening)
+            if (!enabled || scale == 0f) {
+                binding.viewerContainer.setRenderEffect(null)
+                return
+            }
+
+            try {
+                val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // API 33+: True image sharpening using AGSL RuntimeShader
+                    val sharpenShader = RuntimeShader(SHARPEN_SHADER)
+                    sharpenShader.setFloatUniform("scale", scale)
+                    RenderEffect.createRuntimeShaderEffect(sharpenShader, SHADER_INPUT_NAME)
+                } else {
+                    // API 31-32: Fallback to contrast enhancement which creates a perception of sharpness
+                    // Scale 0.0-2.0 maps to contrast multiplier 1.0-1.6
+                    val contrastFactor = 1f + (scale * 0.3f)
+                    val translate = (-0.5f * contrastFactor + 0.5f) * 255f
+                    val contrastMatrix = ColorMatrix(
+                        floatArrayOf(
+                            contrastFactor, 0f, 0f, 0f, translate,
+                            0f, contrastFactor, 0f, 0f, translate,
+                            0f, 0f, contrastFactor, 0f, translate,
+                            0f, 0f, 0f, 1f, 0f,
+                        )
+                    )
+                    RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(contrastMatrix))
+                }
+                binding.viewerContainer.setRenderEffect(effect)
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to apply sharpen effect" }
+                binding.viewerContainer.setRenderEffect(null)
+            }
         }
     }
 }
