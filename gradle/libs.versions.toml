@@ -49,7 +49,7 @@ coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp" }
 
-subsamplingscaleimageview = "com.github.tachiyomiorg:subsampling-scale-image-view:66e0db195d"
+subsamplingscaleimageview = "com.github.mozzaru:subsampling-scale-image-view:b50f872d68e79294082b0ae4f367f2ccce353e4d"
 image-decoder = "com.github.tachiyomiorg:image-decoder:41c059e540"
 
 natural-comparator = "com.github.gpanther:java-nat-sort:natural-comparator-1.1"
