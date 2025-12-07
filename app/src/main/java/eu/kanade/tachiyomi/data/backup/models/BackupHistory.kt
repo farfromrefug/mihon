@@ -10,11 +10,15 @@ data class BackupHistory(
     @ProtoNumber(1) var url: String,
     @ProtoNumber(2) var lastRead: Long,
     @ProtoNumber(3) var readDuration: Long = 0,
+    @ProtoNumber(4) var currentPage: Long = 0,
+    @ProtoNumber(5) var totalPage: Long = 0,
 ) {
     fun getHistoryImpl(): History {
         return History.create().copy(
             readAt = Date(lastRead),
             readDuration = readDuration,
+            currentPage = currentPage,
+            totalPage = totalPage,
         )
     }
 }
