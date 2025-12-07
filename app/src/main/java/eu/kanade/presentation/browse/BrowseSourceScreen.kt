@@ -52,6 +52,7 @@ fun BrowseSourceContent(
     onHelpClick: () -> Unit,
     onLocalSourceHelpClick: () -> Unit,
     onMangaClick: (Manga) -> Unit,
+    hasLocalManga: (Manga) -> Boolean,
     onMangaLongClick: (Manga) -> Unit,
 ) {
     val context = LocalContext.current
@@ -127,6 +128,7 @@ fun BrowseSourceContent(
                 PagedBrowseSourceComfortableGrid(
                     mangaList = mangaList,
                     columns = columns,
+                    hasLocalManga = hasLocalManga,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,
                     onMangaLongClick = onMangaLongClick,
@@ -135,6 +137,7 @@ fun BrowseSourceContent(
                 BrowseSourceComfortableGrid(
                     mangaList = mangaList,
                     columns = columns,
+                    hasLocalManga = hasLocalManga,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,
                     onMangaLongClick = onMangaLongClick,
@@ -145,6 +148,7 @@ fun BrowseSourceContent(
             if (pagedModeEnabled) {
                 PagedBrowseSourceList(
                     mangaList = mangaList,
+                    hasLocalManga = hasLocalManga,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,
                     onMangaLongClick = onMangaLongClick,
@@ -152,6 +156,7 @@ fun BrowseSourceContent(
             } else {
                 BrowseSourceList(
                     mangaList = mangaList,
+                    hasLocalManga = hasLocalManga,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,
                     onMangaLongClick = onMangaLongClick,
@@ -163,6 +168,7 @@ fun BrowseSourceContent(
                 PagedBrowseSourceCompactGrid(
                     mangaList = mangaList,
                     columns = columns,
+                    hasLocalManga = hasLocalManga,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,
                     onMangaLongClick = onMangaLongClick,
@@ -170,6 +176,7 @@ fun BrowseSourceContent(
             } else {
                 BrowseSourceCompactGrid(
                     mangaList = mangaList,
+                    hasLocalManga = hasLocalManga,
                     columns = columns,
                     contentPadding = contentPadding,
                     onMangaClick = onMangaClick,

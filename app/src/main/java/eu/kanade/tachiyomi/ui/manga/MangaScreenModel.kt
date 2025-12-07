@@ -279,25 +279,26 @@ class MangaScreenModel(
         screenModelScope.launch {
             val state = successState ?: return@launch
 
-            // If manga has local source downloads (dual-source mode), skip remote fetch
-            if (downloadProvider.hasLocalSourceDownloads(state.manga.title)) {
-                // For local source downloads, refresh from local source instead
-                updateSuccessState { it.copy(isRefreshingData = true) }
-                try {
-                    withIOContext {
-                        fetchLocalSourceChapters()
-                    }
-                } finally {
-                    updateSuccessState { it.copy(isRefreshingData = false) }
-                }
-                return@launch
-            }
-
+//            if (state.manga.isLocal()) {
+//                updateSuccessState { it.copy(isRefreshingData = true) }
+//                try {
+//                    withIOContext {
+//                        fetchLocalSourceChapters()
+//                        LocalMangaImportJob.startNow(context, manga.id)
+//                    }
+//                } finally {
+//                    updateSuccessState { it.copy(isRefreshingData = false) }
+//                }
+//                return@launch
+//            }
             updateSuccessState { it.copy(isRefreshingData = true) }
             val fetchFromSourceTasks = listOf(
-                async { fetchMangaFromSource(manualFetch) },
                 async { fetchChaptersFromSource(manualFetch) },
+                async { fetchMangaFromSource(manualFetch) },
             )
+            if (state.manga.isLocal()) {
+                fetchFromSourceTasks + async { LocalMangaImportJob.startNow(context, state.manga.id) }
+            }
             fetchFromSourceTasks.awaitAll()
             updateSuccessState { it.copy(isRefreshingData = false) }
         }
@@ -750,9 +751,9 @@ class MangaScreenModel(
 
             // Don't show snackbar if downloading to local source
             // (manga will be automatically added to library after download)
-            val shouldAutoAdd = downloadPreferences.downloadToLocalSource().get()
+            val ignoreSnack = downloadPreferences.downloadToLocalSource().get()
 
-            if (!isFavorited && !successState.hasPromptedToAddBefore && !shouldAutoAdd) {
+            if (!isFavorited && !successState.hasPromptedToAddBefore && !ignoreSnack) {
                 updateSuccessState { state ->
                     state.copy(hasPromptedToAddBefore = true)
                 }
@@ -940,7 +941,7 @@ class MangaScreenModel(
         screenModelScope.launchIO {
             val coverCache: CoverCache = Injekt.get()
             val coverManager: LocalCoverManager = Injekt.get()
-            
+
             val result = try {
                 val inputStream = when {
                     coverUrl.startsWith("http://") || coverUrl.startsWith("https://") -> {
@@ -994,7 +995,7 @@ class MangaScreenModel(
                 message = message,
                 withDismissAction = true,
             )
-            
+
             // Clear selection after the operation completes
             toggleAllSelection(false)
         }

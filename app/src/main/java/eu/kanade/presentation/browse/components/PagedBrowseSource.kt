@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -68,6 +66,7 @@ fun PagedBrowseSourceCompactGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
@@ -132,7 +131,7 @@ fun PagedBrowseSourceCompactGrid(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .onSizeChanged { 
+            .onSizeChanged {
                 containerHeight = it.height
                 containerWidth = it.width
             }
@@ -178,6 +177,7 @@ fun PagedBrowseSourceCompactGrid(
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items
                 PagedBrowseSourceCompactGridItem(
                     manga = manga,
+                    hasLocalManga = hasLocalManga,
                     onClick = { onMangaClick(manga) },
                     onLongClick = { onMangaLongClick(manga) },
                 )
@@ -207,7 +207,10 @@ private fun PagedBrowseSourceCompactGridItem(
     manga: Manga,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
+    val inLocal = hasLocalManga(manga)
+    val inLibraryOrLocal = manga.favorite || inLocal
     MangaCompactGridItem(
         title = manga.title,
         coverData = MangaCover(
@@ -217,9 +220,10 @@ private fun PagedBrowseSourceCompactGridItem(
             url = manga.thumbnailUrl,
             lastModified = manga.coverLastModified,
         ),
-        coverAlpha = if (manga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverAlpha = if (inLibraryOrLocal) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         coverBadgeStart = {
             InLibraryBadge(enabled = manga.favorite)
+            InLocalBadge(enabled = inLocal)
         },
         onLongClick = onLongClick,
         onClick = onClick,
@@ -233,6 +237,7 @@ fun PagedBrowseSourceComfortableGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
@@ -292,7 +297,7 @@ fun PagedBrowseSourceComfortableGrid(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .onSizeChanged { 
+            .onSizeChanged {
                 containerHeight = it.height
                 containerWidth = it.width
             }
@@ -338,6 +343,7 @@ fun PagedBrowseSourceComfortableGrid(
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items
                 PagedBrowseSourceComfortableGridItem(
                     manga = manga,
+                    hasLocalManga = hasLocalManga,
                     onClick = { onMangaClick(manga) },
                     onLongClick = { onMangaLongClick(manga) },
                 )
@@ -367,19 +373,24 @@ private fun PagedBrowseSourceComfortableGridItem(
     manga: Manga,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
+    val inLocal = hasLocalManga(manga)
+    val inLibraryOrLocal = manga.favorite || inLocal
     MangaComfortableGridItem(
         title = manga.title,
         coverData = MangaCover(
             mangaId = manga.id,
             sourceId = manga.source,
+
             isMangaFavorite = manga.favorite,
             url = manga.thumbnailUrl,
             lastModified = manga.coverLastModified,
         ),
-        coverAlpha = if (manga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverAlpha = if (inLibraryOrLocal) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         coverBadgeStart = {
             InLibraryBadge(enabled = manga.favorite)
+            InLocalBadge(enabled = inLocal)
         },
         onLongClick = onLongClick,
         onClick = onClick,
@@ -392,6 +403,7 @@ fun PagedBrowseSourceList(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
@@ -470,6 +482,7 @@ fun PagedBrowseSourceList(
                 val manga by mangaList[realIndex]?.collectAsState() ?: return@items
                 PagedBrowseSourceListItem(
                     manga = manga,
+                    hasLocalManga = hasLocalManga,
                     onClick = { onMangaClick(manga) },
                     onLongClick = { onMangaLongClick(manga) },
                 )
@@ -499,7 +512,10 @@ private fun PagedBrowseSourceListItem(
     manga: Manga,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
+    val inLocal = hasLocalManga(manga)
+    val inLibraryOrLocal = manga.favorite || inLocal
     MangaListItem(
         title = manga.title,
         coverData = MangaCover(
@@ -509,9 +525,10 @@ private fun PagedBrowseSourceListItem(
             url = manga.thumbnailUrl,
             lastModified = manga.coverLastModified,
         ),
-        coverAlpha = if (manga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverAlpha = if (inLibraryOrLocal) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         badge = {
             InLibraryBadge(enabled = manga.favorite)
+            InLocalBadge(enabled = inLocal)
         },
         onLongClick = onLongClick,
         onClick = onClick,

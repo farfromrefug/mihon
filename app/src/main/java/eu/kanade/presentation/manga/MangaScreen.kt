@@ -1,6 +1,5 @@
 package eu.kanade.presentation.manga
 
-import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -23,11 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -49,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -99,7 +92,6 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.shouldExpandFAB
 import tachiyomi.source.local.isLocal
 import java.time.Instant
-import kotlin.compareTo
 
 @Composable
 fun MangaScreen(
@@ -344,7 +336,6 @@ private fun MangaScreenSmallImpl(
     showFab: Boolean,
 ) {
     val chapterListState = rememberLazyListState()
-    val chapterGridState = rememberLazyGridState()
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
@@ -489,7 +480,7 @@ private fun MangaScreenSmallImpl(
                         )
 
                         ExpandableMangaDescription(
-                            defaultExpandState = state.isFromSource,
+                            defaultExpandState = false,
                             description = state.manga.description,
                             tagsProvider = { state.manga.genre },
                             notes = state.manga.notes,
@@ -604,7 +595,7 @@ private fun MangaScreenSmallImpl(
                             contentType = MangaScreenItem.DESCRIPTION_WITH_TAG,
                         ) {
                             ExpandableMangaDescription(
-                                defaultExpandState = state.isFromSource,
+                                defaultExpandState = false,
                                 description = state.manga.description,
                                 tagsProvider = { state.manga.genre },
                                 notes = state.manga.notes,
@@ -673,6 +664,7 @@ fun MangaScreenLargeImpl(
     chapterDisplayMode: ChapterDisplayMode,
     chapterGridColumns: Int,
     pagedModeEnabled: Boolean,
+    showFab: Boolean,
     navigateUp: () -> Unit,
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
@@ -855,7 +847,7 @@ fun MangaScreenLargeImpl(
                             onEditCategory = onEditCategoryClicked,
                         )
                         ExpandableMangaDescription(
-                            defaultExpandState = true,
+                            defaultExpandState = false,
                             description = state.manga.description,
                             tagsProvider = { state.manga.genre },
                             notes = state.manga.notes,

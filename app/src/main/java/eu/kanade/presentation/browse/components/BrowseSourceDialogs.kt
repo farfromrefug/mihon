@@ -39,3 +39,32 @@ fun RemoveMangaDialog(
         },
     )
 }
+
+
+@Composable
+fun ConfirmAddOrDownloadDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmDownload: () -> Unit,
+    onConfirmFavorite: () -> Unit,
+) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(text = stringResource(MR.strings.download_remote_manga)) },
+            text = {
+                Text(
+                    text = stringResource(MR.strings.download_remote_manga_desc)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirmDownload ) {
+                    Text(stringResource(MR.strings.download_local_add))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onConfirmFavorite) {
+                    Text(text = stringResource(MR.strings.add_to_favorites))
+
+                }
+            }
+        )
+}

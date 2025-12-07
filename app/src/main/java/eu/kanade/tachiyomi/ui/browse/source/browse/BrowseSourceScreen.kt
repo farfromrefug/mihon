@@ -41,6 +41,7 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.browse.BrowseSourceContent
 import eu.kanade.presentation.browse.MissingSourceScreen
 import eu.kanade.presentation.browse.components.BrowseSourceToolbar
+import eu.kanade.presentation.browse.components.ConfirmAddOrDownloadDialog
 import eu.kanade.presentation.browse.components.RemoveMangaDialog
 import eu.kanade.presentation.category.components.ChangeCategoryDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
@@ -222,6 +223,7 @@ data class BrowseSourceScreen(
         ) { paddingValues ->
             BrowseSourceContent(
                 source = screenModel.source,
+                hasLocalManga = { manga -> screenModel.downloadManager.hasLocalManga(manga) },
                 mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
                 columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
                 displayMode = screenModel.displayMode,
@@ -240,7 +242,9 @@ data class BrowseSourceScreen(
                             duplicates.isNotEmpty() -> screenModel.setDialog(
                                 BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
                             )
-                            else -> screenModel.addFavorite(manga)
+                            else -> {
+                                screenModel.addOrDownloadFavorite(manga)
+                            }
                         }
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
@@ -295,6 +299,19 @@ data class BrowseSourceScreen(
                     onConfirm = { include, _ ->
                         screenModel.changeMangaFavorite(dialog.manga)
                         screenModel.moveMangaToCategories(dialog.manga, include)
+                    },
+                )
+            }
+            is BrowseSourceScreenModel.Dialog.ConfirmAddOrDownload -> {
+                ConfirmAddOrDownloadDialog(
+                    onDismissRequest = onDismissRequest,
+                    onConfirmFavorite = {
+                        onDismissRequest()
+                        screenModel.addFavorite(dialog.manga)
+                    },
+                    onConfirmDownload = {
+                        onDismissRequest()
+                        screenModel.downloadFullMangaAndFavorite(dialog.manga)
                     },
                 )
             }

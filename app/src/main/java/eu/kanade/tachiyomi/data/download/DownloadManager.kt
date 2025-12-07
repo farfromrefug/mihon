@@ -95,6 +95,18 @@ class DownloadManager(
     }
 
     /**
+     * Checks if a manga has downloads in the local source folder.
+     * This is used for "dual-source" behavior where manga downloaded to local source
+     * should be treated as local source for refresh operations.
+     *
+     * @param manga
+     * @return true if manga has local source downloads and downloadToLocalSource is enabled.
+     */
+    fun hasLocalManga(manga: Manga): Boolean {
+        return provider.hasLocalSourceDownloads(manga.title)
+    }
+
+    /**
      * Returns the download from queue if the chapter is queued for download
      * else it will return null which means that the chapter is not queued for download
      *

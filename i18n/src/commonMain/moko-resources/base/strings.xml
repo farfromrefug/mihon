@@ -809,6 +809,10 @@
     <string name="chapter_display_comfortable_grid">Comfortable grid</string>
     <string name="pref_chapter_columns">Grid columns</string>
     <string name="no_chapters_error">No chapters found</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="download_remote_manga_desc">This manga is remote and \"download to local source\" is enabled.\nDownload the full manga locally , or just add it as a favorite?</string>
+    <string name="download_remote_manga">Download remote manga?</string>
+    <string name="download_local_add">Download into local and add</string>
     <string name="are_you_sure">Are you sure?</string>
     <string name="exclude_scanlators">Exclude scanlators</string>
     <string name="no_scanlators_found">No scanlators found</string>

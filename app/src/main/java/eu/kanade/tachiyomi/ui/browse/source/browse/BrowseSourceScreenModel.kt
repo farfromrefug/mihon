@@ -15,12 +15,15 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.core.preference.asState
+import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.source.interactor.GetIncognitoState
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -28,6 +31,8 @@ import eu.kanade.tachiyomi.util.removeCovers
 import tachiyomi.source.local.isLocal
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
@@ -36,32 +41,41 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import logcat.LogPriority
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.lang.launchIO
+import tachiyomi.core.common.util.lang.withIOContext
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.chapter.interactor.SetMangaDefaultChapterFlags
+import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.GetMangaWithChapters
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.interactor.GetRemoteManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
+import kotlin.collections.map
+import kotlin.text.get
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 class BrowseSourceScreenModel(
     private val context: Context,
     private val sourceId: Long,
     listingQuery: String?,
-    sourceManager: SourceManager = Injekt.get(),
-    sourcePreferences: SourcePreferences = Injekt.get(),
+    private val sourcePreferences: SourcePreferences = Injekt.get(),
+    private val syncChaptersWithSource: SyncChaptersWithSource = Injekt.get(),
+    private val sourceManager: SourceManager = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val coverCache: CoverCache = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
@@ -69,8 +83,11 @@ class BrowseSourceScreenModel(
     private val getCategories: GetCategories = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
+    private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
+    private val downloadPreferences: DownloadPreferences = Injekt.get(),
+    val downloadManager: DownloadManager = Injekt.get(),
     private val addTracks: AddTracks = Injekt.get(),
     private val getIncognitoState: GetIncognitoState = Injekt.get(),
 ) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
@@ -239,7 +256,7 @@ class BrowseSourceScreenModel(
             }
 
             updateManga.await(new.toMangaUpdate())
-            
+
             // For local source manga, start background job to prepare metadata/covers
             if (new.favorite && manga.isLocal()) {
                 LocalMangaImportJob.startNow(context, manga.id)
@@ -247,8 +264,60 @@ class BrowseSourceScreenModel(
         }
     }
 
-    fun addFavorite(manga: Manga) {
+    fun downloadFullMangaAndFavorite(manga: Manga) {
+        // Called from UI: user chose to download then favorite.
         screenModelScope.launch {
+            val chaptersToDownload: List<tachiyomi.domain.chapter.model.Chapter> = try {
+                withIOContext {
+                    // Build an SManga to ask the source
+                    val sManga = manga.toSManga()
+
+                    // Resolve source (may throw if not found, let it propagate to catch)
+                    val src = sourceManager.getOrStub(manga.source)
+
+                    // Get remote chapter list (network call)
+                    val sChapters = src.getChapterList(sManga)
+
+                    // Sync chapters from the source into DB and get domain chapter list like MangaScreenModel does
+                    // `syncChaptersWithSource.await` returns the synced domain Chapter list
+                    syncChaptersWithSource.await(
+                        sChapters,
+                        manga,
+                        src,
+                        manualFetch = true,
+                    )
+                }
+            } catch (e: Throwable) {
+                // If network or sync failed, fallback to whatever chapters are in DB for this manga
+                logcat(LogPriority.ERROR, e) { "Failed to fetch/sync chapters for downloadFullMangaAndFavorite" }
+                // getMangaWithChapters should provide DB chapters; use applyScanlatorFilter = false to get all
+                getMangaAndChapters.awaitChapters(manga.id, applyScanlatorFilter = false)
+            }
+
+            if (chaptersToDownload.isNotEmpty()) {
+                // Enqueue all chapters for download
+                downloadManager.downloadChapters(manga, chaptersToDownload)
+            }
+            // Mark as favorite immediately
+//            changeMangaFavorite(manga)
+
+            // TODO: enqueue download for all chapters using download manager / use-cases
+            // Example placeholder:
+            // downloadManager.enqueueAllChapters(manga)
+        }
+    }
+    fun addOrDownloadFavorite(manga: Manga) {
+        if (downloadPreferences.downloadToLocalSource().get() && sourceId != LocalSource.ID) {
+            // Ask the UI to show a choice: download full remote manga OR just add as favorite.
+            setDialog(Dialog.ConfirmAddOrDownload(manga))
+        } else {
+            addFavorite(manga)
+        }
+    }
+    fun addFavorite(manga: Manga) {
+
+        screenModelScope.launch {
+
             val categories = getCategories()
             val defaultCategoryId = libraryPreferences.defaultCategory().get()
             val defaultCategory = categories.find { it.id == defaultCategoryId.toLong() }
@@ -351,6 +420,7 @@ class BrowseSourceScreenModel(
             val initialSelection: ImmutableList<CheckboxState.State<Category>>,
         ) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
+        data class ConfirmAddOrDownload(val manga: Manga) : Dialog
     }
 
     @Immutable

@@ -117,6 +117,7 @@ data class MigrateSourceSearchScreen(
                 onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
                 onLocalSourceHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) },
                 onMangaClick = openMigrateDialog,
+                hasLocalManga = { manga -> screenModel.downloadManager.hasLocalManga(manga) },
                 onMangaLongClick = { navigator.push(MangaScreen(it.id, true)) },
             )
         }

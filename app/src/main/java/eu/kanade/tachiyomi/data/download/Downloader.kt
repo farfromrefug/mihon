@@ -2,15 +2,20 @@ package eu.kanade.tachiyomi.data.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
+import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.chapter.model.toSChapter
+import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.getComicInfo
+import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.library.LibraryUpdateNotifier
+import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import eu.kanade.tachiyomi.data.library.LocalSourceScanJob
 import eu.kanade.tachiyomi.data.notification.NotificationHandler
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.NOMEDIA_FILE
@@ -30,6 +35,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -40,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import mihon.core.archive.ZipWriter
+import mihon.domain.manga.model.toDomainManga
 import nl.adaptivity.xmlutil.serialization.XML
 import okhttp3.Response
 import tachiyomi.core.common.i18n.stringResource
@@ -52,9 +59,14 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.core.metadata.comicinfo.COMIC_INFO_FILE
 import tachiyomi.core.metadata.comicinfo.ComicInfo
 import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.download.service.DownloadPreferences
+import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
+import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
@@ -63,6 +75,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
 import java.util.Locale
+import kotlin.collections.orEmpty
 
 /**
  * This class is the one in charge of downloading chapters.
@@ -442,7 +455,85 @@ class Downloader(
             // This is separate from the "auto add local manga to library" setting which
             // controls background scanning for pre-existing local files
             if (downloadPreferences.downloadToLocalSource().get()) {
-                LocalSourceScanJob.startNow(context)
+                // launch a coroutine to resolve local manga and mark favorite
+                scope.launch(Dispatchers.IO) {
+                    val provider: DownloadProvider = Injekt.get()
+                    val sourceManager: SourceManager = Injekt.get()
+                    val syncChaptersWithSource: SyncChaptersWithSource = Injekt.get()
+                    val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId = Injekt.get()
+                    val mangaRepository: MangaRepository = Injekt.get()
+                    val networkToLocalManga: NetworkToLocalManga = Injekt.get()
+
+                    val mangaDirName = provider.getLocalSourceMangaDirName(download.manga.title)
+                    val localUrl = mangaDirName
+                    // Try to find an existing local-manga record
+                    var localManga = getMangaByUrlAndSourceId.await(localUrl, LocalSource.ID)
+
+                    if (localManga == null) {
+
+                        val manga = Manga.create().copy(
+                            url = localUrl,
+                            title = mangaDirName,
+                            source = LocalSource.ID,
+                            favorite = true,
+                        )
+                        localManga = networkToLocalManga(manga)
+
+                        // Either wait a short time for the scan to finish OR trigger the same sync used elsewhere
+                        // Example: force a synchronous fetch+sync for the local source for this manga title:
+//                        val localSource = sourceManager.get(LocalSource.ID) as? LocalSource ?: return@launch
+
+                        // Build an SManga like MangaScreenModel does
+//                        val sm = SManga.create().apply {
+//                            url = localUrl
+//                            title = mangaDirName
+//                        }
+//
+//                        // Fetch chapters from local source and sync with DB (this will create the local manga)
+//                        val chapters = localSource.getChapterList(sm)
+//                        syncChaptersWithSource.await(chapters, /* remoteManga = */ download.manga, localSource, manualFetch = true)
+//                        // Now re-query the repository
+//                        localManga = sm.toDomainManga(LocalSource.ID)
+                    }
+
+                    localManga?.let {
+                        if (!it.favorite) {
+                            val mangaId = localManga.id
+                            val libraryPreferences: LibraryPreferences = Injekt.get()
+                            val updateManga: UpdateManga = Injekt.get()
+                            val setMangaCategories: SetMangaCategories = Injekt.get()
+                            val getCategories: GetCategories = Injekt.get()
+                            val addTracks: AddTracks = Injekt.get()
+
+                            val categories = getCategories.subscribe()
+                                .firstOrNull()
+                                ?.filterNot { it.isSystemCategory }
+                                .orEmpty()
+                            val defaultCategoryId = libraryPreferences.defaultCategory().get().toLong()
+                            val defaultCategory = categories.find { it.id == defaultCategoryId }
+
+                            when {
+                                // Default category set
+                                defaultCategory != null -> {
+                                    val result = updateManga.awaitUpdateFavorite(mangaId, true)
+                                    if (!result) return@launch
+                                    setMangaCategories.await(mangaId, listOf(defaultCategoryId))
+                                }
+
+                                // Automatic 'Default' or no categories
+                                defaultCategoryId == 0L || categories.isEmpty() -> {
+                                    val result = updateManga.awaitUpdateFavorite(mangaId, true)
+                                    if (!result)  return@launch
+                                    setMangaCategories.await(mangaId, listOf())
+                                }
+                            }
+
+                            // Sync with tracking services if applicable
+                            addTracks.bindEnhancedTrackers(localManga, sourceManager.getOrStub(localManga.source))
+                        }
+                        LocalMangaImportJob.startNow(context, localManga.id)
+                    }
+                }
             }
         } catch (error: Throwable) {
             if (error is CancellationException) throw error

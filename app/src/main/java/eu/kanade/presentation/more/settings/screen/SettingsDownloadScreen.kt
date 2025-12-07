@@ -248,15 +248,15 @@ object SettingsDownloadScreen : SearchableSettings {
                     subtitle = stringResource(MR.strings.pref_local_source_chapter_folder_template_summary),
                     enabled = downloadToLocalSource,
                 ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = libraryPreferences.autoAddLocalMangaToLibrary(),
-                    title = stringResource(MR.strings.pref_auto_add_local_manga_to_library),
-                    subtitle = stringResource(MR.strings.pref_auto_add_local_manga_to_library_summary),
-                    onValueChanged = {
-                        ContextCompat.getMainExecutor(context).execute { LocalSourceScanJob.setupTask(context) }
-                        true
-                    },
-                ),
+//                Preference.PreferenceItem.SwitchPreference(
+//                    preference = libraryPreferences.autoAddLocalMangaToLibrary(),
+//                    title = stringResource(MR.strings.pref_auto_add_local_manga_to_library),
+//                    subtitle = stringResource(MR.strings.pref_auto_add_local_manga_to_library_summary),
+//                    onValueChanged = {
+//                        ContextCompat.getMainExecutor(context).execute { LocalSourceScanJob.setupTask(context) }
+//                        true
+//                    },
+//                ),
             ),
         )
     }

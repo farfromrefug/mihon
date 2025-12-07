@@ -13,6 +13,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import eu.kanade.presentation.library.components.CommonMangaItemDefaults
 import eu.kanade.presentation.library.components.MangaComfortableGridItem
+import eu.kanade.tachiyomi.data.download.DownloadManager
 import kotlinx.coroutines.flow.StateFlow
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaCover
@@ -25,6 +26,7 @@ fun BrowseSourceComfortableGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
     LazyVerticalGrid(
         columns = columns,
@@ -42,6 +44,7 @@ fun BrowseSourceComfortableGrid(
             val manga by mangaList[index]?.collectAsState() ?: return@items
             BrowseSourceComfortableGridItem(
                 manga = manga,
+                hasLocalManga = hasLocalManga,
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
             )
@@ -60,7 +63,10 @@ private fun BrowseSourceComfortableGridItem(
     manga: Manga,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
+    hasLocalManga: (Manga) -> Boolean,
 ) {
+    val inLocal = hasLocalManga(manga)
+    val inLibraryOrLocal = manga.favorite || inLocal
     MangaComfortableGridItem(
         title = manga.title,
         coverData = MangaCover(
@@ -70,9 +76,10 @@ private fun BrowseSourceComfortableGridItem(
             url = manga.thumbnailUrl,
             lastModified = manga.coverLastModified,
         ),
-        coverAlpha = if (manga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverAlpha = if (inLibraryOrLocal) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         coverBadgeStart = {
             InLibraryBadge(enabled = manga.favorite)
+            InLocalBadge(enabled = inLocal)
         },
         onLongClick = onLongClick,
         onClick = onClick,
