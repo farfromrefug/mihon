@@ -36,6 +36,8 @@ class UiPreferences(
 
     fun compactMangaDetails() = preferenceStore.getBoolean("pref_compact_manga_details", false)
 
+    fun mangaDetailsShowFab() = preferenceStore.getBoolean("pref_manga_show_fab", false)
+
     fun imagesInDescription() = preferenceStore.getBoolean("pref_render_images_description", true)
 
     fun showCoverBackdrop() = preferenceStore.getBoolean("pref_show_cover_backdrop", true)

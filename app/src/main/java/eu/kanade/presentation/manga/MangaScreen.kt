@@ -113,6 +113,7 @@ fun MangaScreen(
     chapterDisplayMode: ChapterDisplayMode = ChapterDisplayMode.List,
     chapterGridColumns: Int = 0,
     pagedModeEnabled: Boolean = false,
+    showFab: Boolean,
     navigateUp: () -> Unit,
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
@@ -201,6 +202,7 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            showFab = showFab,
         )
     } else if (!isTabletUi) {
         MangaScreenSmallImpl(
@@ -241,6 +243,7 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            showFab = showFab,
         )
     } else  {
         MangaScreenLargeImpl(
@@ -281,6 +284,7 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            showFab = showFab,
         )
     }
 }
@@ -337,6 +341,7 @@ private fun MangaScreenSmallImpl(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    showFab: Boolean,
 ) {
     val chapterListState = rememberLazyListState()
     val chapterGridState = rememberLazyGridState()
@@ -408,28 +413,31 @@ private fun MangaScreenSmallImpl(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            val isFABVisible = remember(chapters) {
-                chapters.fastAny { !it.chapter.read } && !isAnySelected
+            if (showFab) {
+                val isFABVisible = remember(chapters) {
+                    chapters.fastAny { !it.chapter.read } && !isAnySelected
+                }
+                AnimatedVisibility(
+                    visible = isFABVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    ExtendedFloatingActionButton(
+                        text = {
+                            val isReading = remember(state.chapters) {
+                                state.chapters.fastAny { it.chapter.read }
+                            }
+                            Text(
+                                text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
+                            )
+                        },
+                        icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
+                        onClick = onContinueReading,
+                        expanded = chapterListState.shouldExpandFAB(),
+                    )
+                }
             }
-            AnimatedVisibility(
-                visible = isFABVisible,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                ExtendedFloatingActionButton(
-                    text = {
-                        val isReading = remember(state.chapters) {
-                            state.chapters.fastAny { it.chapter.read }
-                        }
-                        Text(
-                            text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
-                        )
-                    },
-                    icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
-                    onClick = onContinueReading,
-                    expanded = chapterListState.shouldExpandFAB(),
-                )
-            }
+
         },
     ) { contentPadding ->
         val topPadding = contentPadding.calculateTopPadding()
@@ -775,30 +783,33 @@ fun MangaScreenLargeImpl(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            val isFABVisible = remember(chapters) {
-                chapters.fastAny { !it.chapter.read } && !isAnySelected
+            if (showFab) {
+                val isFABVisible = remember(chapters) {
+                    chapters.fastAny { !it.chapter.read } && !isAnySelected
+                }
+                AnimatedVisibility(
+                    visible = isFABVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    ExtendedFloatingActionButton(
+                        text = {
+                            val isReading = remember(state.chapters) {
+                                state.chapters.fastAny { it.chapter.read }
+                            }
+                            Text(
+                                text = stringResource(
+                                    if (isReading) MR.strings.action_resume else MR.strings.action_start,
+                                ),
+                            )
+                        },
+                        icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
+                        onClick = onContinueReading,
+                        expanded = chapterListState.shouldExpandFAB(),
+                    )
+                }
             }
-            AnimatedVisibility(
-                visible = isFABVisible,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                ExtendedFloatingActionButton(
-                    text = {
-                        val isReading = remember(state.chapters) {
-                            state.chapters.fastAny { it.chapter.read }
-                        }
-                        Text(
-                            text = stringResource(
-                                if (isReading) MR.strings.action_resume else MR.strings.action_start,
-                            ),
-                        )
-                    },
-                    icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
-                    onClick = onContinueReading,
-                    expanded = chapterListState.shouldExpandFAB(),
-                )
-            }
+
         },
     ) { contentPadding ->
         PullRefresh(
@@ -972,6 +983,7 @@ private fun MangaScreenCompactImpl(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    showFab: Boolean,
 ) {
     val chapterListState = rememberLazyListState()
 
@@ -1049,28 +1061,31 @@ private fun MangaScreenCompactImpl(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            val isFABVisible = remember(chapters) {
-                chapters.fastAny { !it.chapter.read } && !isAnySelected
+            if (showFab) {
+                val isFABVisible = remember(chapters) {
+                    chapters.fastAny { !it.chapter.read } && !isAnySelected
+                }
+                AnimatedVisibility(
+                    visible = isFABVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    ExtendedFloatingActionButton(
+                        text = {
+                            val isReading = remember(state.chapters) {
+                                state.chapters.fastAny { it.chapter.read }
+                            }
+                            Text(
+                                text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
+                            )
+                        },
+                        icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
+                        onClick = onContinueReading,
+                        expanded = chapterListState.shouldExpandFAB(),
+                    )
+                }
             }
-            AnimatedVisibility(
-                visible = isFABVisible,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                ExtendedFloatingActionButton(
-                    text = {
-                        val isReading = remember(state.chapters) {
-                            state.chapters.fastAny { it.chapter.read }
-                        }
-                        Text(
-                            text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
-                        )
-                    },
-                    icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
-                    onClick = onContinueReading,
-                    expanded = chapterListState.shouldExpandFAB(),
-                )
-            }
+
         },
     ) { contentPadding ->
         val topPadding = contentPadding.calculateTopPadding()

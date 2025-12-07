@@ -133,6 +133,11 @@ object SettingsAppearanceScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_compact_manga_details),
                     subtitle = stringResource(MR.strings.pref_compact_manga_details_summary),
                 ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.mangaDetailsShowFab(),
+                    title = stringResource(MR.strings.pref_manga_show_fab),
+                    subtitle = stringResource(MR.strings.pref_manga_show_fab_summary),
+                ),
                 Preference.PreferenceItem.ListPreference(
                     preference = uiPreferences.dateFormat(),
                     entries = DateFormats

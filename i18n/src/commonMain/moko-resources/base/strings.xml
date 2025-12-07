@@ -665,6 +665,8 @@
     <string name="pref_tablet_ui_mode">Tablet UI</string>
     <string name="pref_compact_manga_details">Compact manga details</string>
     <string name="pref_compact_manga_details_summary">Opens description in a sheet instead of expanding inline, giving more room for chapters</string>
+    <string name="pref_manga_show_fab">Show "start" button</string>
+    <string name="pref_manga_show_fab_summary">show the "start" floating action button in manga screen</string>
     <string name="pref_verbose_logging">Verbose logging</string>
     <string name="pref_verbose_logging_summary">Print verbose logs to system log (reduces app performance)</string>
     <string name="pref_debug_info">Debug info</string>
