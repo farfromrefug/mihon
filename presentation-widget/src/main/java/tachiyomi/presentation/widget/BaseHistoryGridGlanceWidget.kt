@@ -50,6 +50,7 @@ import tachiyomi.presentation.widget.components.HistoryWidget
 import tachiyomi.presentation.widget.components.LockedWidget
 import tachiyomi.presentation.widget.util.appWidgetBackgroundRadius
 import tachiyomi.presentation.widget.util.calculateRowAndColumnCount
+import tachiyomi.presentation.core.util.WidgetPrefs
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -68,6 +69,7 @@ abstract class BaseHistoryGridGlanceWidget(
     abstract val topPadding: Dp
     abstract val bottomPadding: Dp
 
+    @OptIn(ExperimentalCoilApi::class)
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val locked = preferences.useAuthenticator().get()
         val containerModifier = GlanceModifier
@@ -93,6 +95,9 @@ abstract class BaseHistoryGridGlanceWidget(
                 )
                 return@provideContent
             }
+            // Read configured rows from SharedPreferences (fall back to 1). This avoids depending on app-only UiPreferences.
+            val prefs = context.getSharedPreferences(WidgetPrefs.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
+            val widgetRows = prefs.getInt(WidgetPrefs.PREF_WIDGET_ROWS, 1).coerceAtLeast(1)
 
             val flow = remember {
                 getHistory
@@ -105,6 +110,7 @@ abstract class BaseHistoryGridGlanceWidget(
             val data by flow.collectAsState(initial = null)
             HistoryWidget(
                 data = data,
+                nbRows = widgetRows,
                 contentColor = foreground,
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,

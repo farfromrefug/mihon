@@ -23,7 +23,6 @@ fun UpdatesMangaCover(
 ) {
     Box(
         modifier = modifier
-            .size(width = CoverWidth, height = CoverHeight)
             .appWidgetInnerRadius(),
     ) {
         if (cover != null) {

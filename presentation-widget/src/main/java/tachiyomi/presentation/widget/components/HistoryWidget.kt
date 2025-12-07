@@ -18,6 +18,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -28,13 +29,24 @@ import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.widget.util.calculateRowAndColumnCount
 
+
+/**
+ * Small holder for returning 4 values without introducing a larger type or data class.
+ * Internal to this file only.
+ */
+private data class GridMetrics(
+    val rows: Int,
+    val columns: Int,
+    val itemWidth: Dp,
+    val itemHeight: Dp,
+)
 @Composable
 fun HistoryWidget(
     data: ImmutableList<Pair<HistoryWithRelations, Bitmap?>>?,
     contentColor: ColorProvider,
     topPadding: Dp,
     bottomPadding: Dp,
-    nbColumns: Int = 1,
+    nbRows: Int = 1,
     modifier: GlanceModifier = GlanceModifier,
 ) {
     Box(
@@ -49,12 +61,58 @@ fun HistoryWidget(
                 style = TextStyle(color = contentColor),
             )
         } else {
-            val (rowCount, columnCount) = LocalSize.current.calculateRowAndColumnCount(topPadding, bottomPadding)
+            val size = LocalSize.current
+            val totalWidth = size.width
+            val totalHeight = size.height
+
+            // Spacing constants used to compute available space per item
+            val verticalSpacingPerRow = 8.dp // corresponds to Row padding vertical (4.dp top + 4.dp bottom)
+            val horizontalSpacingPerItem = 6.dp // corresponds to Box padding horizontal (3.dp left + 3.dp right)
+            val minItemDimension = 8.dp
+
+            // If we don't have widget measurements, fall back to sensible defaults.
+            val grid = if (totalWidth <= 0.dp || totalHeight <= 0.dp) {
+                val rows = nbRows.coerceAtLeast(1)
+                val defaultItemHeight = 48.dp
+                val defaultItemWidth = (defaultItemHeight * (2f / 3f)).coerceAtLeast(8.dp)
+                // Try to compute columns from data size to avoid huge empty space
+                val columns = ((data.size + rows - 1) / rows).coerceAtLeast(1)
+                GridMetrics(rows, columns, defaultItemWidth, defaultItemHeight)
+            } else {
+                // Remove widget paddings to get the available height for content
+                val verticalPaddingToRemove = topPadding + bottomPadding
+                val availableHeight = (totalHeight - verticalPaddingToRemove).coerceAtLeast(1.dp)
+
+                // Use the provided number of rows to compute per-item height
+                val rows = nbRows.coerceAtLeast(1)
+                // Compute raw height per row including the spacing between rows:
+                // We consider verticalSpacingPerRow as the spacing occupied by a row padding.
+                val rawItemHeight = (availableHeight / rows) - verticalSpacingPerRow
+                val itemHeight = rawItemHeight.coerceAtLeast(minItemDimension)
+
+                // Given the cover ratio width:height = 2:3, compute width from height
+                val itemWidth = (itemHeight * (2f / 3f)).coerceAtLeast(minItemDimension)
+
+                // Compute how many columns fit in the total width given item width + horizontal spacing
+                val columnsThatFit = (totalWidth / (itemWidth + horizontalSpacingPerItem)).toInt().coerceAtLeast(1)
+
+                // But don't show more columns than items would need for the given rows
+                val maxNeededColumns = ((data.size + rows - 1) / rows).coerceAtLeast(1)
+                val columns = columnsThatFit.coerceAtMost(maxNeededColumns)
+
+                GridMetrics(rows, columns, itemWidth, itemHeight)
+            }
+
             Column(
                 modifier = GlanceModifier.fillMaxHeight(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // The grid is row-major: nbRows x columnCount
+                val rowCount = grid.rows
+                val columnCount = grid.columns
+                val itemWidth = grid.itemWidth
+                val itemHeight = grid.itemHeight
                 (0..<rowCount).forEach { i ->
                     val historyRow = (0..<columnCount).mapNotNull { j ->
                         data.getOrNull(j + (i * columnCount))
@@ -77,7 +135,7 @@ fun HistoryWidget(
                                         LocalContext.current,
                                         Class.forName(Constants.READER_ACTIVITY),
                                     ).apply {
-                                        putExtra(Constants.MANGA_EXTRA, history.id)
+                                        putExtra(Constants.MANGA_EXTRA, history.mangaId)
                                         putExtra(Constants.CHAPTER_EXTRA, history.chapterId)
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -88,7 +146,7 @@ fun HistoryWidget(
                                     }
                                     UpdatesMangaCover(
                                         cover = cover,
-                                        modifier = GlanceModifier.clickable(actionStartActivity(intent)),
+                                        modifier = GlanceModifier.size(itemWidth, itemHeight).clickable(actionStartActivity(intent)),
                                     )
                                 }
                             }

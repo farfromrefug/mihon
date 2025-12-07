@@ -268,6 +268,13 @@
     <string name="pref_security">Security</string>
     <string name="pref_firebase">Analytics and Crash logs</string>
 
+
+    <string name="pref_category_widgets">Widgets</string>
+    <string name="pref_widgets_summary">All settings related to android widgets</string>
+    <string name="pref_appearance">Appearance</string>
+    <string name="pref_widgets_nb_rows">Number of rows</string>
+    <string name="pref_widgets_nb_rows_summary">Number of rows of items to show in the history widget</string>
+
     <string name="lock_with_biometrics">Require unlock</string>
     <string name="lock_when_idle">Lock when idle</string>
     <string name="lock_always">Always</string>

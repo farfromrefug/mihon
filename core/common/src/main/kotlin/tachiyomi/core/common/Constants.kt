@@ -9,7 +9,7 @@ object Constants {
     const val CHAPTER_EXTRA = "chapter"
 
     const val MAIN_ACTIVITY = "eu.kanade.tachiyomi.ui.main.MainActivity"
-    const val READER_ACTIVITY = "eu.kanade.tachiyomi.ui.main.ReaderActivity"
+    const val READER_ACTIVITY = "eu.kanade.tachiyomi.ui.reader.ReaderActivity"
 
     // Shortcut actions
     const val SHORTCUT_LIBRARY = "eu.kanade.tachiyomi.SHOW_LIBRARY"

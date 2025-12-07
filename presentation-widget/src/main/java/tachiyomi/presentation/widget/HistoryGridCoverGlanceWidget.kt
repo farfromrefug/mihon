@@ -6,7 +6,7 @@ import androidx.glance.ImageProvider
 import androidx.glance.unit.ColorProvider
 
 
-class HistoryGridCoverGlanceWidget : BaseUpdatesGridGlanceWidget() {
+class HistoryGridCoverGlanceWidget : BaseHistoryGridGlanceWidget() {
     override val foreground = ColorProvider(Color.White)
     override val background = ImageProvider(R.drawable.appwidget_coverscreen_background)
     override val topPadding = 0.dp

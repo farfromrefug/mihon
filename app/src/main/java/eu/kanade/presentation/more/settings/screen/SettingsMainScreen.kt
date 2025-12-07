@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarDefaults
@@ -219,6 +220,12 @@ object SettingsMainScreen : Screen() {
             subtitleRes = MR.strings.pref_security_summary,
             icon = Icons.Outlined.Security,
             screen = SettingsSecurityScreen,
+        ),
+        Item(
+            titleRes = MR.strings.pref_category_widgets,
+            subtitleRes = MR.strings.pref_widgets_summary,
+            icon = Icons.Outlined.Widgets,
+            screen = SettingsWidgetsScreen,
         ),
         Item(
             titleRes = MR.strings.pref_category_advanced,

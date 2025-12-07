@@ -51,6 +51,7 @@ class UiPreferences(
 
     // Paged mode for e-ink devices - displays content page by page instead of scrolling
     fun pagedModeEnabled() = preferenceStore.getBoolean("pref_paged_mode_enabled", false)
+    fun widgetRows() = preferenceStore.getInt("pref_widget_rows", 1)
 
     companion object {
         fun dateFormat(format: String): DateTimeFormatter = when (format) {
