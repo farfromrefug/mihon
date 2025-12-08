@@ -262,13 +262,13 @@ fun MangaToolbarCompact(
                         ),
                     )
                     // Add description button
-                    add(
-                        AppBar.Action(
-                            title = stringResource(MR.strings.manga_info_description),
-                            icon = Icons.Outlined.Description,
-                            onClick = onDescriptionClicked,
-                        ),
-                    )
+//                    add(
+//                        AppBar.Action(
+//                            title = stringResource(MR.strings.manga_info_description),
+//                            icon = Icons.Outlined.Description,
+//                            onClick = onDescriptionClicked,
+//                        ),
+//                    )
                     if (onClickDownload != null) {
                         add(
                             AppBar.Action(
