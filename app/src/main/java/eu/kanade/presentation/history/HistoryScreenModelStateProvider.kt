@@ -102,7 +102,10 @@ class HistoryScreenModelStateProvider : PreviewParameterProvider<HistoryScreenMo
                             isMangaFavorite = Random.nextBoolean(),
                             url = "https://example.com/cover.png",
                             lastModified = Random.nextLong(),
-                        ),
+
+                            ),
+                        currentPage = 0,
+                        totalPage = Random.nextLong(),
                     ),
                 ),
             )

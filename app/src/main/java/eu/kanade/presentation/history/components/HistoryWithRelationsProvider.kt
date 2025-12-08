@@ -2,6 +2,7 @@ package eu.kanade.presentation.history.components
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import tachiyomi.domain.history.model.HistoryWithRelations
+import tachiyomi.domain.manga.model.MangaCover
 import java.util.Date
 
 internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWithRelations> {
@@ -14,13 +15,15 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         chapterNumber = 10.2,
         readAt = Date(1697247357L),
         readDuration = 123L,
-        coverData = tachiyomi.domain.manga.model.MangaCover(
+        coverData = MangaCover(
             mangaId = 3L,
             sourceId = 4L,
             isMangaFavorite = false,
             url = "https://example.com/cover.png",
             lastModified = 5L,
         ),
+        currentPage = 2,
+        totalPage = 32,
     )
 
     private val historyWithoutReadAt = HistoryWithRelations(
@@ -31,13 +34,15 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         chapterNumber = 10.2,
         readAt = null,
         readDuration = 123L,
-        coverData = tachiyomi.domain.manga.model.MangaCover(
+        coverData = MangaCover(
             mangaId = 3L,
             sourceId = 4L,
             isMangaFavorite = false,
             url = "https://example.com/cover.png",
             lastModified = 5L,
         ),
+        currentPage = 2,
+        totalPage = 32,
     )
 
     private val historyWithNegativeChapterNumber = HistoryWithRelations(
@@ -48,13 +53,15 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         chapterNumber = -2.0,
         readAt = Date(1697247357L),
         readDuration = 123L,
-        coverData = tachiyomi.domain.manga.model.MangaCover(
+        coverData = MangaCover(
             mangaId = 3L,
             sourceId = 4L,
             isMangaFavorite = false,
             url = "https://example.com/cover.png",
             lastModified = 5L,
         ),
+        currentPage = 2,
+        totalPage = 32,
     )
 
     override val values: Sequence<HistoryWithRelations>

@@ -19,7 +19,7 @@
             android:name="tachiyomi.presentation.widget.HistoryGridCoverGlanceReceiver"
             android:enabled="@bool/glance_appwidget_available"
             android:exported="false"
-            android:label="@string/label_recent_updates">
+            android:label="@string/label_recent_history">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

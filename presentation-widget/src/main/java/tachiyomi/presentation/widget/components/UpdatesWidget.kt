@@ -19,6 +19,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -36,6 +37,8 @@ fun UpdatesWidget(
     contentColor: ColorProvider,
     topPadding: Dp,
     bottomPadding: Dp,
+    nbRows: Int = 1,
+    isEInk: Boolean = false,
     modifier: GlanceModifier = GlanceModifier,
 ) {
     Box(
@@ -50,12 +53,17 @@ fun UpdatesWidget(
                 style = TextStyle(color = contentColor),
             )
         } else {
-            val (rowCount, columnCount) = LocalSize.current.calculateRowAndColumnCount(topPadding, bottomPadding)
+            val grid = LocalSize.current.calculateRowAndColumnCount(nbRows, topPadding, bottomPadding)
+
             Column(
                 modifier = GlanceModifier.fillMaxHeight(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                val rowCount = grid.rows
+                val columnCount = grid.columns
+                val itemWidth = grid.itemWidth
+                val itemHeight = grid.itemHeight
                 (0..<rowCount).forEach { i ->
                     val coverRow = (0..<columnCount).mapNotNull { j ->
                         data.getOrNull(j + (i * columnCount))
@@ -88,7 +96,7 @@ fun UpdatesWidget(
                                     }
                                     UpdatesMangaCover(
                                         cover = cover,
-                                        modifier = GlanceModifier.clickable(actionStartActivity(intent))
+                                        modifier = GlanceModifier.size(itemWidth, itemHeight).clickable(actionStartActivity(intent))
                                             .appWidgetInnerRadius(),
                                     )
                                 }

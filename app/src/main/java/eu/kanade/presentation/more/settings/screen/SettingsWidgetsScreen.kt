@@ -1,6 +1,5 @@
 package eu.kanade.presentation.more.settings.screen
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
@@ -11,10 +10,8 @@ import eu.kanade.presentation.more.settings.Preference
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
-import tachiyomi.presentation.core.util.WidgetPrefs
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import androidx.core.content.edit
 import tachiyomi.presentation.core.util.collectAsState
 
 object SettingsWidgetsScreen : SearchableSettings {
@@ -35,9 +32,9 @@ object SettingsWidgetsScreen : SearchableSettings {
     private fun getAppearanceGroup(
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
-        val context = LocalContext.current
         val rowsPref = uiPreferences.widgetRows()
         val rows by rowsPref.collectAsState()
+        val ctx = LocalContext.current
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_appearance),
@@ -46,19 +43,12 @@ object SettingsWidgetsScreen : SearchableSettings {
                     value = rows,
                     valueRange = 1..10,
                     title = stringResource(MR.strings.pref_widgets_nb_rows),
-                    valueString = stringResource(MR.strings.pref_widgets_nb_rows_summary),
+                    valueString = rows.toString(),
                     onValueChanged = {
                         rowsPref.set(it)
-
-                        // Also persist to SharedPreferences so the widget module can read it
-                        context.getSharedPreferences(WidgetPrefs.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit {
-                                putInt(WidgetPrefs.PREF_WIDGET_ROWS, it)
-                            }
                     },
                 ),
             ),
         )
     }
-
 }
