@@ -36,6 +36,7 @@ import eu.kanade.tachiyomi.util.system.dpToPx
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.map
+import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.domain.updates.interactor.GetUpdates
@@ -74,11 +75,13 @@ abstract class BaseUpdatesGridGlanceWidget(
             .appWidgetBackgroundRadius()
 
         val manager = GlanceAppWidgetManager(context)
+        val preferenceStore = Injekt.get<PreferenceStore>()
+        val widgetRows = preferenceStore.getInt("pref_widget_rows", 1).get()
         val ids = manager.getGlanceIds(javaClass)
         val (rowCount, columnCount) = ids
             .flatMap { manager.getAppWidgetSizes(it) }
             .maxBy { it.height.value * it.width.value }
-            .calculateRowAndColumnCount(topPadding, bottomPadding)
+            .calculateRowAndColumnCount(widgetRows, topPadding, bottomPadding)
 
         provideContent {
             // If app lock enabled, don't do anything

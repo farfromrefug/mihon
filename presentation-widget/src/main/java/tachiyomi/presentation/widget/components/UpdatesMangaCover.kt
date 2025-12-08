@@ -2,10 +2,12 @@ package tachiyomi.presentation.widget.components
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.layout.Box
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
@@ -19,6 +21,7 @@ val CoverHeight = 87.dp
 @Composable
 fun UpdatesMangaCover(
     cover: Bitmap?,
+    cornerRadius: Dp = 12.dp,
     modifier: GlanceModifier = GlanceModifier,
 ) {
     Box(
@@ -30,7 +33,7 @@ fun UpdatesMangaCover(
                 contentDescription = null,
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .appWidgetInnerRadius(),
+                    .cornerRadius(cornerRadius),
                 contentScale = ContentScale.Crop,
             )
         } else {

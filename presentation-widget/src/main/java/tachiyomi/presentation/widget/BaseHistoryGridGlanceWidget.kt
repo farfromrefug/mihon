@@ -2,6 +2,7 @@ package tachiyomi.presentation.widget
 
 import android.app.Application
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.runtime.collectAsState
@@ -12,6 +13,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
@@ -39,6 +41,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.subscribe
+import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.model.HistoryWithRelations
@@ -51,6 +56,8 @@ import tachiyomi.presentation.widget.components.LockedWidget
 import tachiyomi.presentation.widget.util.appWidgetBackgroundRadius
 import tachiyomi.presentation.widget.util.calculateRowAndColumnCount
 import tachiyomi.presentation.core.util.WidgetPrefs
+import tachiyomi.presentation.core.theme.LocalEinkMode
+
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -80,11 +87,14 @@ abstract class BaseHistoryGridGlanceWidget(
             .appWidgetBackgroundRadius()
 
         val manager = GlanceAppWidgetManager(context)
+        val preferenceStore = Injekt.get<PreferenceStore>()
+        var widgetRows = preferenceStore.getInt("pref_widget_rows", 1).get()
+
         val ids = manager.getGlanceIds(javaClass)
-        val (rowCount, columnCount) = ids
+        val maxSize = ids
             .flatMap { manager.getAppWidgetSizes(it) }
             .maxBy { it.height.value * it.width.value }
-            .calculateRowAndColumnCount(topPadding, bottomPadding)
+        val maxGrid = maxSize.calculateRowAndColumnCount(widgetRows, topPadding, bottomPadding)
 
         provideContent {
             // If app lock enabled, don't do anything
@@ -95,25 +105,31 @@ abstract class BaseHistoryGridGlanceWidget(
                 )
                 return@provideContent
             }
-            // Read configured rows from SharedPreferences (fall back to 1). This avoids depending on app-only UiPreferences.
-            val prefs = context.getSharedPreferences(WidgetPrefs.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-            val widgetRows = prefs.getInt(WidgetPrefs.PREF_WIDGET_ROWS, 1).coerceAtLeast(1)
+            val widgetRowsChanges = remember {
+                preferenceStore.getInt("pref_widget_rows", 1).changes()
+            }
+            val currentRows by widgetRowsChanges.collectAsState(initial = widgetRows)
+
+            val rawPref = preferenceStore.getString("pref_theme_mode_key", "SYSTEM").get()
+            val isEInk = rawPref == "EINK" || (rawPref == "SYSTEM" && LocalEinkMode.current)
+
+            val grid = LocalSize.current.calculateRowAndColumnCount(currentRows, topPadding, bottomPadding)
 
             val flow = remember {
                 getHistory
                     .subscribe("")
                     .distinctUntilChanged()
                     .map { rawData ->
-                        rawData.prepareData(rowCount, columnCount)
+                        rawData.prepareData(maxGrid.rows, maxGrid.columns, maxGrid.itemWidth, maxGrid.itemHeight)
                     }
             }
+
             val data by flow.collectAsState(initial = null)
             HistoryWidget(
                 data = data,
-                nbRows = widgetRows,
+                grid = grid,
+                isEInk = isEInk,
                 contentColor = foreground,
-                topPadding = topPadding,
-                bottomPadding = bottomPadding,
                 modifier = containerModifier,
             )
         }
@@ -123,10 +139,12 @@ abstract class BaseHistoryGridGlanceWidget(
     private suspend fun List<HistoryWithRelations>.prepareData(
         rowCount: Int,
         columnCount: Int,
+        width: Dp,
+        height: Dp,
     ): ImmutableList<Pair<HistoryWithRelations, Bitmap?>> {
         // Resize to cover size
-        val widthPx = CoverWidth.value.toInt().dpToPx
-        val heightPx = CoverHeight.value.toInt().dpToPx
+        val widthPx = width.value.toInt().coerceIn(0, 100 ).dpToPx
+        val heightPx = height.value.toInt().coerceIn(0, 100 ).dpToPx
         val roundPx = context.resources.getDimension(R.dimen.appwidget_inner_radius)
         return withIOContext {
             this@prepareData
