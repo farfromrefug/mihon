@@ -22,6 +22,7 @@ import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.background
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.height
+import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -85,15 +86,14 @@ fun UpdatesMangaCoverWithProgress(
         if (totalPage > 0) {
             Column(
                 modifier = GlanceModifier
-                    .fillMaxWidth().background(ColorProvider(Color(0x80000000))) // 50% black
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                    .fillMaxWidth().background(ColorProvider(Color(0x80ffffff))),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Page indicator text
                 Text(
                     text = "$currentPage / $totalPage",
-                    style = TextStyle(color = contentColor, fontSize = 10.sp),
-                    modifier = GlanceModifier.padding(bottom = 4.dp, start = 4.dp, end = 4.dp),
+                    style = TextStyle(color = ColorProvider(Color.Black), fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                    modifier = GlanceModifier.padding(bottom = 1.dp, start = 4.dp, end = 4.dp),
                 )
 
                 // Linear progress bar
