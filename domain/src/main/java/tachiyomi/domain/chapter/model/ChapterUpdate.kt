@@ -15,6 +15,7 @@ data class ChapterUpdate(
     val scanlator: String? = null,
     val version: Long? = null,
     val coverUrl: String? = null,
+    val totalPages: Long? = null,
 )
 
 fun Chapter.toChapterUpdate(): ChapterUpdate {
@@ -33,5 +34,6 @@ fun Chapter.toChapterUpdate(): ChapterUpdate {
         scanlator,
         version,
         coverUrl,
+        totalPages,
     )
 }

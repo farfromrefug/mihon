@@ -2,7 +2,10 @@
 ALTER TABLE history ADD COLUMN current_page INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE history ADD COLUMN total_page INTEGER NOT NULL DEFAULT 0;
 
--- Recreate historyView to include new columns
+-- Add total_pages column to chapters table
+ALTER TABLE chapters ADD COLUMN total_pages INTEGER NOT NULL DEFAULT 0;
+
+-- Recreate historyView to include new columns and chapter cover URL
 DROP VIEW IF EXISTS historyView;
 
 CREATE VIEW historyView AS
@@ -16,6 +19,7 @@ SELECT
     mangas.favorite,
     mangas.cover_last_modified,
     chapters.chapter_number AS chapterNumber,
+    chapters.cover_url AS chapterCoverUrl,
     history.last_read AS readAt,
     history.time_read AS readDuration,
     history.current_page AS currentPage,

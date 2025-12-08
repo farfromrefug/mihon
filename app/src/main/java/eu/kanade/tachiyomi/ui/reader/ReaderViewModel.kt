@@ -562,11 +562,13 @@ class ReaderViewModel @JvmOverloads constructor(
                 updateChapterProgressOnComplete(readerChapter)
             }
 
+            val totalPages = (readerChapter.pages?.size ?: 0).toLong()
             updateChapter.await(
                 ChapterUpdate(
                     id = readerChapter.chapter.id!!,
                     read = readerChapter.chapter.read,
                     lastPageRead = readerChapter.chapter.last_page_read.toLong(),
+                    totalPages = totalPages,
                 ),
             )
         }

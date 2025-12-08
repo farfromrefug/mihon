@@ -1439,11 +1439,11 @@ private fun LazyListScope.sharedChapterGridItems(
                     item.chapter.name
                 }
 
-                val readProgress = item.chapter.lastPageRead
-                    .takeIf { !item.chapter.read && it > 0L }
-                    ?.let {
-                        it.toDouble()/item.chapter.lastPageRead
-                    } ?: 0.0
+                val readProgress = if (!item.chapter.read && item.chapter.lastPageRead > 0L && item.chapter.totalPages > 0L) {
+                    ((item.chapter.lastPageRead + 1).toDouble() / item.chapter.totalPages.toDouble()).coerceIn(0.0, 1.0)
+                } else {
+                    0.0
+                }
 
                 Box(
                     modifier = Modifier.weight(1f),
