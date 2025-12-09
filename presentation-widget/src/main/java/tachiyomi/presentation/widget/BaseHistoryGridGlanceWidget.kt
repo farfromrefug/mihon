@@ -148,7 +148,6 @@ abstract class BaseHistoryGridGlanceWidget(
         val roundPx = context.resources.getDimension(R.dimen.appwidget_inner_radius)
         return withIOContext {
             this@prepareData
-                .distinctBy { it.mangaId }
                 .take(rowCount * columnCount)
                 .map { updatesView ->
                     val request = ImageRequest.Builder(context)
