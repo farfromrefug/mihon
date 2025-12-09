@@ -56,6 +56,15 @@ class MangaGroupRepositoryImpl(
         }
     }
 
+    override suspend fun updateCover(groupId: Long, coverUrl: String?) {
+        handler.await {
+            mangaGroupsQueries.updateCover(
+                groupId = groupId,
+                coverUrl = coverUrl,
+            )
+        }
+    }
+
     override suspend fun delete(groupId: Long) {
         handler.await {
             mangaGroupsQueries.delete(groupId)
@@ -82,7 +91,8 @@ class MangaGroupRepositoryImpl(
             // Delete existing categories for this group
             mangaGroupsQueries.deleteGroupCategories(groupId)
             
-            // Insert new categories
+            // Batch insert new categories - SQLDelight will handle this efficiently
+            // as a single transaction
             categoryIds.forEach { categoryId ->
                 mangaGroupsQueries.addGroupToCategory(
                     groupId = groupId,

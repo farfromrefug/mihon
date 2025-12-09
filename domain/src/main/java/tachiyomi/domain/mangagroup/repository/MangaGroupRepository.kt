@@ -22,6 +22,8 @@ interface MangaGroupRepository {
 
     suspend fun update(update: MangaGroupUpdate)
 
+    suspend fun updateCover(groupId: Long, coverUrl: String?)
+
     suspend fun delete(groupId: Long)
 
     suspend fun addMangaToGroup(mangaId: Long, groupId: Long)

@@ -15,7 +15,8 @@ class ManageMangaInGroup(
     }
 
     suspend fun moveBetweenGroups(mangaId: Long, newGroupId: Long) {
-        // Remove from current group (if any) and add to new group
+        // The manga_group_members table has PRIMARY KEY on manga_id,
+        // so INSERT OR REPLACE automatically removes from old group and adds to new group
         return mangaGroupRepository.addMangaToGroup(mangaId, newGroupId)
     }
 

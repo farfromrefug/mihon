@@ -12,11 +12,7 @@ class UpdateMangaGroup(
     }
 
     suspend fun awaitUpdateCover(groupId: Long, coverUrl: String?) {
-        return mangaGroupRepository.update(
-            MangaGroupUpdate(
-                id = groupId,
-                coverUrl = coverUrl,
-            ),
-        )
+        // Use the dedicated updateCover method that allows NULL values
+        return mangaGroupRepository.updateCover(groupId, coverUrl)
     }
 }

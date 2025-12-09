@@ -73,6 +73,12 @@ SET name = coalesce(:name, name),
     cover_url = coalesce(:coverUrl, cover_url)
 WHERE _id = :groupId;
 
+-- Update group cover (allows NULL to clear)
+updateCover:
+UPDATE manga_groups
+SET cover_url = :coverUrl
+WHERE _id = :groupId;
+
 -- Delete group
 delete:
 DELETE FROM manga_groups
