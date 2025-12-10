@@ -112,7 +112,8 @@ class LibraryScreenModel(
                 combine(getTracksPerManga.subscribe(), getTrackingFiltersFlow(), ::Pair),
                 getLibraryItemPreferencesFlow(),
                 if (groupId == null) getMangaGroups.subscribe() else flowOf(emptyList()),
-            ) { searchQuery, categories, favorites, (tracksMap, trackingFilters), itemPreferences, allGroups ->
+            ) { searchQuery, categories, favorites, trackingPair, itemPreferences, allGroups ->
+                val (tracksMap, trackingFilters) = trackingPair
                 val showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }
                 val filteredFavorites = favorites
                     .let { if (groupId != null) it.filter { item -> item.libraryManga.groupId == groupId } else it }
