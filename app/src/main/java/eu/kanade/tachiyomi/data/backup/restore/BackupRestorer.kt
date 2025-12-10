@@ -134,20 +134,30 @@ class BackupRestorer(
         backupCategories: List<BackupCategory>,
     ) = launch {
         mangaRestorer.sortByNew(backupMangas)
-            .forEach {
+            .forEach { backupManga ->
                 ensureActive()
 
                 try {
-                    val restoredMangaId = mangaRestorer.restore(it, backupCategories)
-                    // Store mapping for group restoration
-                    mangaIdMapping[it.source to it.url.hashCode().toLong()] = restoredMangaId
+                    val oldMangaId = backupManga.id
+                    mangaRestorer.restore(backupManga, backupCategories)
+                    
+                    // After restoration, look up the manga to get its new ID
+                    val restoredManga = mangaRestorer.findMangaByUrlAndSource(
+                        backupManga.url,
+                        backupManga.source,
+                    )
+                    
+                    // Store mapping from old ID to new ID for group restoration
+                    if (restoredManga != null) {
+                        mangaIdMapping[oldMangaId] = restoredManga.id
+                    }
                 } catch (e: Exception) {
-                    val sourceName = sourceMapping[it.source] ?: it.source.toString()
-                    errors.add(Date() to "${it.title} [$sourceName]: ${e.message}")
+                    val sourceName = sourceMapping[backupManga.source] ?: backupManga.source.toString()
+                    errors.add(Date() to "${backupManga.title} [$sourceName]: ${e.message}")
                 }
 
                 restoreProgress += 1
-                notifier.showRestoreProgress(it.title, restoreProgress, restoreAmount, isSync)
+                notifier.showRestoreProgress(backupManga.title, restoreProgress, restoreAmount, isSync)
             }
     }
 

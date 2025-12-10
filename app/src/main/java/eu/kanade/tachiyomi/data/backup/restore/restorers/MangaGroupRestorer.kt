@@ -19,12 +19,12 @@ class MangaGroupRestorer(
     suspend fun restore(
         backupGroup: BackupMangaGroup,
         backupCategories: List<BackupCategory>,
-        mangaIdMapping: Map<Pair<Long, Long>, Long>,
+        mangaIdMapping: Map<Long, Long>,
     ) {
         // Get the manga that were restored and are in library
         val restoredMangaIds = backupGroup.mangaIds.mapNotNull { backupMangaId ->
             // Try to find manga using the mapping
-            mangaIdMapping[backupGroup.source to backupMangaId]?.let { restoredId ->
+            mangaIdMapping[backupMangaId]?.let { restoredId ->
                 // Verify the manga exists and is in the library
                 val manga = getManga.await(restoredId)
                 if (manga?.favorite == true) restoredId else null

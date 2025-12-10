@@ -78,6 +78,10 @@ class MangaRestorer(
         }
     }
 
+    suspend fun findMangaByUrlAndSource(url: String, sourceId: Long): Manga? {
+        return getMangaByUrlAndSourceId.await(url, sourceId)
+    }
+
     private suspend fun findExistingManga(backupManga: BackupManga): Manga? {
         return getMangaByUrlAndSourceId.await(backupManga.url, backupManga.source)
     }
