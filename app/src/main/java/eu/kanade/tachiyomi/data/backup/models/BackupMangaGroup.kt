@@ -12,7 +12,14 @@ data class BackupMangaGroup(
     @ProtoNumber(4) var dateCreated: Long = 0L,
     @ProtoNumber(5) var mangaIds: List<Long> = emptyList(),
     @ProtoNumber(6) var categories: List<Long> = emptyList(),
+    // Store manga references as (source, url) pairs for reliable restore
+    @ProtoNumber(7) var mangaSourceUrls: List<MangaReference> = emptyList(),
 ) {
+    @Serializable
+    data class MangaReference(
+        @ProtoNumber(1) var source: Long,
+        @ProtoNumber(2) var url: String,
+    )
     fun toMangaGroup(): MangaGroup {
         return MangaGroup(
             id = this.id,
@@ -23,7 +30,12 @@ data class BackupMangaGroup(
     }
 
     companion object {
-        fun fromMangaGroup(group: MangaGroup, mangaIds: List<Long>, categories: List<Long>): BackupMangaGroup {
+        fun fromMangaGroup(
+            group: MangaGroup,
+            mangaIds: List<Long>,
+            categories: List<Long>,
+            mangaSourceUrls: List<MangaReference> = emptyList(),
+        ): BackupMangaGroup {
             return BackupMangaGroup(
                 id = group.id,
                 name = group.name,
@@ -31,6 +43,7 @@ data class BackupMangaGroup(
                 dateCreated = group.dateCreated,
                 mangaIds = mangaIds,
                 categories = categories,
+                mangaSourceUrls = mangaSourceUrls,
             )
         }
     }

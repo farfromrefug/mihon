@@ -106,7 +106,11 @@ class BackupRestorer(
             }
             if (options.libraryEntries) {
                 restoreManga(backup.backupManga, if (options.categories) backup.backupCategories else emptyList())
-                restoreMangaGroups(backup.backupMangaGroups, if (options.categories) backup.backupCategories else emptyList())
+                restoreMangaGroups(
+                    backup.backupMangaGroups,
+                    backup.backupManga,
+                    if (options.categories) backup.backupCategories else emptyList(),
+                )
             }
             if (options.extensionRepoSettings) {
                 restoreExtensionRepos(backup.backupExtensionRepo)
@@ -138,7 +142,6 @@ class BackupRestorer(
                 ensureActive()
 
                 try {
-                    val oldMangaId = backupManga.id
                     mangaRestorer.restore(backupManga, backupCategories)
                     
                     // After restoration, look up the manga to get its new ID
@@ -147,9 +150,9 @@ class BackupRestorer(
                         backupManga.source,
                     )
                     
-                    // Store mapping from old ID to new ID for group restoration
+                    // Store mapping from (source, url) to restored ID for group restoration
                     if (restoredManga != null) {
-                        mangaIdMapping[oldMangaId] = restoredManga.id
+                        mangaSourceUrlMapping[backupManga.source to backupManga.url] = restoredManga.id
                     }
                 } catch (e: Exception) {
                     val sourceName = sourceMapping[backupManga.source] ?: backupManga.source.toString()
@@ -163,13 +166,19 @@ class BackupRestorer(
 
     private fun CoroutineScope.restoreMangaGroups(
         backupMangaGroups: List<BackupMangaGroup>,
+        backupMangas: List<BackupManga>,
         backupCategories: List<BackupCategory>,
     ) = launch {
         backupMangaGroups.forEach { backupGroup ->
             ensureActive()
 
             try {
-                mangaGroupRestorer.restore(backupGroup, backupCategories, mangaIdMapping)
+                mangaGroupRestorer.restore(
+                    backupGroup,
+                    backupMangas,
+                    backupCategories,
+                    mangaSourceUrlMapping,
+                )
             } catch (e: Exception) {
                 errors.add(Date() to "Group ${backupGroup.name}: ${e.message}")
             }

@@ -18,13 +18,32 @@ class MangaGroupRestorer(
 
     suspend fun restore(
         backupGroup: BackupMangaGroup,
+        backupMangas: List<eu.kanade.tachiyomi.data.backup.models.BackupManga>,
         backupCategories: List<BackupCategory>,
-        mangaIdMapping: Map<Long, Long>,
+        mangaSourceUrlMapping: Map<Pair<Long, String>, Long>,
     ) {
+        // Use the new manga reference list if available (from newer backups)
+        // Otherwise fall back to trying to map by index (less reliable)
+        val mangaReferences = if (backupGroup.mangaSourceUrls.isNotEmpty()) {
+            backupGroup.mangaSourceUrls
+        } else {
+            // Fallback for old backups: try to map manga IDs by matching with backup manga list
+            // This assumes manga are in the same order, which may not always be true
+            backupGroup.mangaIds.mapNotNull { mangaId ->
+                // Try to find matching manga by index (fragile but better than nothing)
+                backupMangas.getOrNull(mangaId.toInt())?.let { backupManga ->
+                    BackupMangaGroup.MangaReference(
+                        source = backupManga.source,
+                        url = backupManga.url,
+                    )
+                }
+            }
+        }
+        
         // Get the manga that were restored and are in library
-        val restoredMangaIds = backupGroup.mangaIds.mapNotNull { backupMangaId ->
-            // Try to find manga using the mapping
-            mangaIdMapping[backupMangaId]?.let { restoredId ->
+        val restoredMangaIds = mangaReferences.mapNotNull { ref ->
+            // Try to find the restored manga using the (source, url) mapping
+            mangaSourceUrlMapping[ref.source to ref.url]?.let { restoredId ->
                 // Verify the manga exists and is in the library
                 val manga = getManga.await(restoredId)
                 if (manga?.favorite == true) restoredId else null
