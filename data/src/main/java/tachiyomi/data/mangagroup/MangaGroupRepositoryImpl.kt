@@ -12,43 +12,43 @@ class MangaGroupRepositoryImpl(
 ) : MangaGroupRepository {
 
     override suspend fun getAll(): List<MangaGroup> {
-        return handler.awaitList { mangaGroupsQueries.getAll(::mapMangaGroup) }
+        return handler.awaitList { manga_groupsQueries.getAll(::mapMangaGroup) }
     }
 
     override fun subscribeAll(): Flow<List<MangaGroup>> {
-        return handler.subscribeToList { mangaGroupsQueries.getAll(::mapMangaGroup) }
+        return handler.subscribeToList { manga_groupsQueries.getAll(::mapMangaGroup) }
     }
 
     override suspend fun getById(id: Long): MangaGroup? {
-        return handler.awaitOneOrNull { mangaGroupsQueries.getById(id, ::mapMangaGroup) }
+        return handler.awaitOneOrNull { manga_groupsQueries.getById(id, ::mapMangaGroup) }
     }
 
     override suspend fun getByMangaId(mangaId: Long): MangaGroup? {
-        return handler.awaitOneOrNull { mangaGroupsQueries.getByMangaId(mangaId, ::mapMangaGroup) }
+        return handler.awaitOneOrNull { manga_groupsQueries.getByMangaId(mangaId, ::mapMangaGroup) }
     }
 
     override suspend fun getMangaInGroup(groupId: Long): List<Long> {
-        return handler.awaitList { mangaGroupsQueries.getMangaInGroup(groupId) }
+        return handler.awaitList { manga_groupsQueries.getMangaInGroup(groupId) }
     }
 
     override suspend fun getGroupCategories(groupId: Long): List<Long> {
-        return handler.awaitList { mangaGroupsQueries.getGroupCategories(groupId) }
+        return handler.awaitList { manga_groupsQueries.getGroupCategories(groupId) }
     }
 
     override suspend fun insert(name: String, coverUrl: String?, dateCreated: Long): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
-            mangaGroupsQueries.insert(
+            manga_groupsQueries.insert(
                 name = name,
                 coverUrl = coverUrl,
                 dateCreated = dateCreated,
             )
-            mangaGroupsQueries.selectLastInsertedRowId()
+            manga_groupsQueries.selectLastInsertedRowId()
         }
     }
 
     override suspend fun update(update: MangaGroupUpdate) {
         handler.await {
-            mangaGroupsQueries.update(
+            manga_groupsQueries.update(
                 groupId = update.id,
                 name = update.name,
                 coverUrl = update.coverUrl,
@@ -58,7 +58,7 @@ class MangaGroupRepositoryImpl(
 
     override suspend fun updateCover(groupId: Long, coverUrl: String?) {
         handler.await {
-            mangaGroupsQueries.updateCover(
+            manga_groupsQueries.updateCover(
                 groupId = groupId,
                 coverUrl = coverUrl,
             )
@@ -67,13 +67,13 @@ class MangaGroupRepositoryImpl(
 
     override suspend fun delete(groupId: Long) {
         handler.await {
-            mangaGroupsQueries.delete(groupId)
+            manga_groupsQueries.delete(groupId)
         }
     }
 
     override suspend fun addMangaToGroup(mangaId: Long, groupId: Long) {
         handler.await {
-            mangaGroupsQueries.addMangaToGroup(
+            manga_groupsQueries.addMangaToGroup(
                 mangaId = mangaId,
                 groupId = groupId,
             )
@@ -82,19 +82,19 @@ class MangaGroupRepositoryImpl(
 
     override suspend fun removeMangaFromGroup(mangaId: Long) {
         handler.await {
-            mangaGroupsQueries.removeMangaFromGroup(mangaId)
+            manga_groupsQueries.removeMangaFromGroup(mangaId)
         }
     }
 
     override suspend fun setGroupCategories(groupId: Long, categoryIds: List<Long>) {
         handler.await(inTransaction = true) {
             // Delete existing categories for this group
-            mangaGroupsQueries.deleteGroupCategories(groupId)
+            manga_groupsQueries.deleteGroupCategories(groupId)
             
             // Batch insert new categories - SQLDelight will handle this efficiently
             // as a single transaction
             categoryIds.forEach { categoryId ->
-                mangaGroupsQueries.addGroupToCategory(
+                manga_groupsQueries.addGroupToCategory(
                     groupId = groupId,
                     categoryId = categoryId,
                 )
