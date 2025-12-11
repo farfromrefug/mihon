@@ -47,5 +47,7 @@ fun Chapter.toDomainChapter(): DomainChapter? {
         scanlator = scanlator,
         lastModifiedAt = last_modified,
         version = version,
+        coverUrl = thumbnail_url,
+        totalPages = 0, // Not available in database Chapter model
     )
 }

@@ -810,23 +810,24 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     fun openChapterInfoDialog() {
-        val chapter = state.value.currentChapter?.chapter ?: return
+        val dbChapter = state.value.currentChapter?.chapter ?: return
+        val domainChapter = dbChapter.toDomainChapter() ?: return
         val manga = state.value.manga ?: return
         val source = sourceManager.getOrStub(manga.source)
         
         // Extract file info for local sources
         val (fileName, filePath, fileSize) = if (source.isLocal()) {
-            extractLocalChapterInfo(chapter)
+            extractLocalChapterInfo(domainChapter)
         } else {
             Triple(null, null, null)
         }
         
         val chapterInfo = eu.kanade.presentation.reader.ChapterInfo(
-            chapterName = chapter.name,
-            chapterNumber = if (chapter.chapterNumber >= 0) chapter.chapterNumber.toString() else null,
-            scanlator = chapter.scanlator,
+            chapterName = domainChapter.name,
+            chapterNumber = if (domainChapter.chapterNumber >= 0) domainChapter.chapterNumber.toString() else null,
+            scanlator = domainChapter.scanlator,
             sourceName = source.name,
-            dateUpload = chapter.dateUpload,
+            dateUpload = domainChapter.dateUpload,
             fileName = fileName,
             filePath = filePath,
             fileSize = fileSize,
