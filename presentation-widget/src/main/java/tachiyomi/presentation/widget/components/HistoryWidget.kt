@@ -105,16 +105,22 @@ fun HistoryWidget(
                                     val cornerRadius = itemWidth/10
                                     if (isEInk) {
                                         // Inside is the actual cover composable
-                                        UpdatesMangaCover(
+                                        UpdatesMangaCoverWithProgress(
                                             cover = cover,
+                                            currentPage = history.currentPage,
+                                            totalPage = history.totalPage,
+                                            contentColor = contentColor,
                                             cornerRadius = cornerRadius,
                                             modifier = GlanceModifier.size(itemWidth, itemHeight).clickable(actionStartActivity(intent)).background(ColorProvider(androidx.compose.ui.graphics.Color.Black))
                                                 .padding(1.dp) // border thickness
                                                 .cornerRadius(cornerRadius),
                                         )
                                     } else {
-                                        UpdatesMangaCover(
+                                        UpdatesMangaCoverWithProgress(
                                             cover = cover,
+                                            currentPage = history.currentPage,
+                                            totalPage = history.totalPage,
+                                            contentColor = contentColor,
                                             cornerRadius = cornerRadius,
                                             modifier = GlanceModifier.size(itemWidth, itemHeight).clickable(actionStartActivity(intent)).cornerRadius(cornerRadius),
                                         )

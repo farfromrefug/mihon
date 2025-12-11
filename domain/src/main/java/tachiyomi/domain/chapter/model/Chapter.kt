@@ -16,6 +16,7 @@ data class Chapter(
     val lastModifiedAt: Long,
     val version: Long,
     val coverUrl: String? = null,
+    val totalPages: Long = 0,
 ) {
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f
@@ -48,6 +49,7 @@ data class Chapter(
             lastModifiedAt = 0,
             version = 1,
             coverUrl = null,
+            totalPages = 0,
         )
     }
 }

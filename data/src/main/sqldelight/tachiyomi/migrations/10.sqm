@@ -1,3 +1,36 @@
+-- Add progress tracking columns to history table
+ALTER TABLE history ADD COLUMN current_page INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE history ADD COLUMN total_page INTEGER NOT NULL DEFAULT 0;
+
+-- Add total_pages column to chapters table
+ALTER TABLE chapters ADD COLUMN total_pages INTEGER NOT NULL DEFAULT 0;
+
+-- Recreate historyView to include new columns and chapter cover URL
+-- Also remove the max_last_read filtering to show all chapter history entries
+DROP VIEW IF EXISTS historyView;
+
+CREATE VIEW historyView AS
+SELECT
+    history._id AS id,
+    mangas._id AS mangaId,
+    chapters._id AS chapterId,
+    mangas.title,
+    mangas.thumbnail_url AS thumbnailUrl,
+    mangas.source,
+    mangas.favorite,
+    mangas.cover_last_modified,
+    chapters.chapter_number AS chapterNumber,
+    chapters.cover_url AS chapterCoverUrl,
+    history.last_read AS readAt,
+    history.time_read AS readDuration,
+    history.current_page AS currentPage,
+    history.total_page AS totalPage
+FROM mangas
+JOIN chapters
+ON mangas._id = chapters.manga_id
+JOIN history
+ON chapters._id = history.chapter_id;
+
 -- Create manga groups tables for grouping manga together
 CREATE TABLE manga_groups(
     _id INTEGER NOT NULL PRIMARY KEY,

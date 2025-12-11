@@ -562,11 +562,13 @@ class ReaderViewModel @JvmOverloads constructor(
                 updateChapterProgressOnComplete(readerChapter)
             }
 
+            val totalPages = (readerChapter.pages?.size ?: 0).toLong()
             updateChapter.await(
                 ChapterUpdate(
                     id = readerChapter.chapter.id!!,
                     read = readerChapter.chapter.read,
                     lastPageRead = readerChapter.chapter.last_page_read.toLong(),
+                    totalPages = totalPages,
                 ),
             )
         }
@@ -617,8 +619,11 @@ class ReaderViewModel @JvmOverloads constructor(
         val chapterId = readerChapter.chapter.id!!
         val endTime = Date()
         val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
+        
+        val totalPage = (readerChapter.pages?.size ?: 0).toLong()
+        val currentPage = ((readerChapter.chapter.last_page_read + 1).toLong()).coerceIn(0, totalPage)
 
-        upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration))
+        upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration, currentPage, totalPage))
         chapterReadStartTime = null
     }
 

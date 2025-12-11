@@ -66,6 +66,8 @@ class HistoryRepositoryImpl(
                     historyUpdate.chapterId,
                     historyUpdate.readAt,
                     historyUpdate.sessionReadDuration,
+                    historyUpdate.currentPage,
+                    historyUpdate.totalPage,
                 )
             }
         } catch (e: Exception) {

@@ -17,6 +17,7 @@ CREATE TABLE chapters(
     version INTEGER NOT NULL DEFAULT 0,
     is_syncing INTEGER NOT NULL DEFAULT 0,
     cover_url TEXT,
+    total_pages INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(manga_id) REFERENCES mangas (_id)
     ON DELETE CASCADE
 );
@@ -98,8 +99,8 @@ SET is_syncing = 0
 WHERE is_syncing = 1;
 
 insert:
-INSERT INTO chapters(manga_id, url, name, scanlator, read, bookmark, last_page_read, chapter_number, source_order, date_fetch, date_upload, last_modified_at, version, is_syncing, cover_url)
-VALUES (:mangaId, :url, :name, :scanlator, :read, :bookmark, :lastPageRead, :chapterNumber, :sourceOrder, :dateFetch, :dateUpload, 0, :version, 0, :coverUrl);
+INSERT INTO chapters(manga_id, url, name, scanlator, read, bookmark, last_page_read, chapter_number, source_order, date_fetch, date_upload, last_modified_at, version, is_syncing, cover_url, total_pages)
+VALUES (:mangaId, :url, :name, :scanlator, :read, :bookmark, :lastPageRead, :chapterNumber, :sourceOrder, :dateFetch, :dateUpload, 0, :version, 0, :coverUrl, :totalPages);
 
 update:
 UPDATE chapters
@@ -116,7 +117,8 @@ SET manga_id = coalesce(:mangaId, manga_id),
     date_upload = coalesce(:dateUpload, date_upload),
     version = coalesce(:version, version),
     is_syncing = coalesce(:isSyncing, is_syncing),
-    cover_url = coalesce(:coverUrl, cover_url)
+    cover_url = coalesce(:coverUrl, cover_url),
+    total_pages = coalesce(:totalPages, total_pages)
 WHERE _id = :chapterId;
 
 selectLastInsertedRowId:

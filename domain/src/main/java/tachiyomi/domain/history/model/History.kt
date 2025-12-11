@@ -7,6 +7,8 @@ data class History(
     val chapterId: Long,
     val readAt: Date?,
     val readDuration: Long,
+    val currentPage: Long,
+    val totalPage: Long,
 ) {
     companion object {
         fun create() = History(
@@ -14,6 +16,8 @@ data class History(
             chapterId = -1L,
             readAt = null,
             readDuration = -1L,
+            currentPage = 0L,
+            totalPage = 0L,
         )
     }
 }

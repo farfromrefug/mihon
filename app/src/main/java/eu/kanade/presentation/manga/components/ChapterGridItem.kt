@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +65,7 @@ fun ChapterCompactGridItem(
     onDownloadClick: ((ChapterDownloadAction) -> Unit)?,
     modifier: Modifier = Modifier,
     date: String? = null,
-    readProgress: String? = null,
+    readProgress: Double = 0.0,
 ) {
     ChapterGridItemSelectable(
         isSelected = selected,
@@ -86,7 +88,7 @@ fun ChapterCompactGridItem(
                     read = read,
                     bookmark = bookmark,
                     date = null,
-                    readProgress = null,
+                    readProgress = readProgress,
                 )
             },
             badgesStart = {
@@ -126,6 +128,7 @@ fun ChapterCompactGridItem(
             } else {
                 null
             },
+            readProgress = readProgress,
         )
     }
 }
@@ -149,7 +152,7 @@ fun ChapterComfortableGridItem(
     onDownloadClick: ((ChapterDownloadAction) -> Unit)?,
     modifier: Modifier = Modifier,
     date: String? = null,
-    readProgress: String? = null,
+    readProgress: Double = 0.0,
 ) {
     ChapterGridItemSelectable(
         isSelected = selected,
@@ -208,7 +211,6 @@ fun ChapterComfortableGridItem(
             ChapterGridItemTitle(
                 title = title,
                 date = null,
-                readProgress = null,
                 read = read,
                 modifier = Modifier.padding(4.dp),
             )
@@ -225,7 +227,7 @@ private fun BoxScope.ChapterCoverTextOverlay(
     read: Boolean,
     bookmark: Boolean,
     date: String?,
-    readProgress: String?,
+    readProgress: Double = 0.0,
 ) {
     Box(
         modifier = Modifier
@@ -236,7 +238,7 @@ private fun BoxScope.ChapterCoverTextOverlay(
                     1f to Color(0xAA000000),
                 ),
             )
-            .fillMaxHeight(0.5f)
+            .fillMaxHeight(0.4f)
             .fillMaxWidth()
             .align(Alignment.BottomCenter),
     )
@@ -281,9 +283,9 @@ private fun BoxScope.ChapterCoverTextOverlay(
                 ),
             ),
         )
-        if (date != null || readProgress != null) {
+        if (date != null ) {
             Text(
-                text = listOfNotNull(date, readProgress).joinToString(" • "),
+                text = listOfNotNull(date).joinToString(" • "),
                 fontSize = 9.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -297,6 +299,19 @@ private fun BoxScope.ChapterCoverTextOverlay(
             )
         }
     }
+    if (readProgress > 0.0) {
+        // Linear progress bar
+        Row(
+            modifier = Modifier.clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
+                .align(Alignment.BottomCenter),
+        ) {
+            LinearProgressIndicator(
+                progress = readProgress.toFloat().coerceIn(0f, 1f),
+//                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth().height(4.dp),
+            )
+        }
+    }
 }
 
 /**
@@ -306,7 +321,6 @@ private fun BoxScope.ChapterCoverTextOverlay(
 private fun ChapterGridItemTitle(
     title: String,
     date: String?,
-    readProgress: String?,
     read: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -324,9 +338,9 @@ private fun ChapterGridItemTitle(
             style = MaterialTheme.typography.titleSmall,
             color = LocalContentColor.current.copy(alpha = if (read) DISABLED_ALPHA else 1f),
         )
-        if (date != null || readProgress != null) {
+        if (date != null) {
             Text(
-                text = listOfNotNull(date, readProgress).joinToString(" • "),
+                text = listOfNotNull(date).joinToString(" • "),
                 fontSize = 9.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -347,6 +361,7 @@ private fun ChapterGridCover(
     badgesStart: (@Composable () -> Unit)? = null,
     badgesEnd: (@Composable () -> Unit)? = null,
     content: @Composable (BoxScope.() -> Unit)? = null,
+    readProgress: Double = 0.0,
 ) {
     Box(
         modifier = modifier
@@ -371,6 +386,21 @@ private fun ChapterGridCover(
                     .align(Alignment.TopEnd),
             ) {
                 badgesEnd()
+            }
+        }
+
+
+        if (readProgress > 0.0) {
+            // Linear progress bar
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
+                    .align(Alignment.BottomCenter),
+            ) {
+                LinearProgressIndicator(
+                    progress = readProgress.toFloat().coerceIn(0f, 1f),
+//                color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                )
             }
         }
     }

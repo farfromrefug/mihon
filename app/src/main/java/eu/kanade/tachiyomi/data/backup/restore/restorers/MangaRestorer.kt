@@ -208,7 +208,8 @@ class MangaRestorer(
                     chapter.dateFetch,
                     chapter.dateUpload,
                     chapter.version,
-                    chapter.coverUrl
+                    chapter.coverUrl,
+                    chapter.totalPages,
                 )
             }
         }
@@ -232,7 +233,8 @@ class MangaRestorer(
                     chapterId = chapter.id,
                     version = chapter.version,
                     isSyncing = 0,
-                    coverUrl = chapter.coverUrl
+                    coverUrl = chapter.coverUrl,
+                    totalPages = chapter.totalPages,
                 )
             }
         }
@@ -348,6 +350,8 @@ class MangaRestorer(
                     .takeIf { it > 0L }
                     ?.let { Date(it) },
                 readDuration = max(item.readDuration, dbHistory.time_read) - dbHistory.time_read,
+                currentPage = if (item.currentPage > 0) item.currentPage else dbHistory.current_page,
+                totalPage = if (item.totalPage > 0) item.totalPage else dbHistory.total_page,
             )
         }
 
@@ -358,6 +362,8 @@ class MangaRestorer(
                         it.chapterId,
                         it.readAt,
                         it.readDuration,
+                        it.currentPage,
+                        it.totalPage,
                     )
                 }
             }
