@@ -33,12 +33,19 @@ object SettingsWidgetsScreen : SearchableSettings {
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
         val rowsPref = uiPreferences.widgetRows()
+        val paddingPref = uiPreferences.widgetPadding()
         val rows by rowsPref.collectAsState()
+        val padding by paddingPref.collectAsState()
         val ctx = LocalContext.current
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_appearance),
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.widgetCenter(),
+                    title = stringResource(MR.strings.pref_widgets_nb_rows),
+                    subtitle = stringResource(MR.strings.pref_widgets_nb_rows),
+                ),
                 Preference.PreferenceItem.SliderPreference(
                     value = rows,
                     valueRange = 1..10,
@@ -46,6 +53,15 @@ object SettingsWidgetsScreen : SearchableSettings {
                     valueString = rows.toString(),
                     onValueChanged = {
                         rowsPref.set(it)
+                    },
+                ),
+                Preference.PreferenceItem.SliderPreference(
+                    value = padding.toInt(),
+                    valueRange = 0..50,
+                    title = stringResource(MR.strings.pref_widgets_nb_rows),
+                    valueString = padding.toString(),
+                    onValueChanged = {
+                        paddingPref.set(it.toFloat())
                     },
                 ),
             ),

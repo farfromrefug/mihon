@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.library
 
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import tachiyomi.domain.library.model.LibraryManga
+import tachiyomi.domain.mangagroup.model.MangaGroup
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -58,3 +59,29 @@ data class LibraryItem(
         }
     }
 }
+
+data class LibraryGroup(
+    val group: MangaGroup,
+    val mangaList: List<LibraryItem>,
+    val categories: List<Long>,
+) {
+    val id: Long = -group.id // Use negative ID to differentiate from manga
+    
+    val totalChapters: Long
+        get() = mangaList.sumOf { it.libraryManga.totalChapters }
+    
+    val unreadCount: Long
+        get() = mangaList.sumOf { it.libraryManga.unreadCount }
+    
+    val downloadCount: Long
+        get() = mangaList.sumOf { it.downloadCount }
+    
+    fun matches(constraint: String): Boolean {
+        if (constraint.startsWith("id:", true)) {
+            return id == constraint.substringAfter("id:").toLongOrNull()
+        }
+        return group.name.contains(constraint, true) ||
+            mangaList.any { it.matches(constraint) }
+    }
+}
+

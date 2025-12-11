@@ -47,6 +47,17 @@ internal fun LanguageBadge(
     }
 }
 
+@Composable
+internal fun GroupBadge(mangaCount: Int) {
+    if (mangaCount > 0) {
+        Badge(
+            text = "$mangaCount",
+            color = MaterialTheme.colorScheme.primary,
+            textColor = MaterialTheme.colorScheme.onPrimary,
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun BadgePreview() {
@@ -56,6 +67,7 @@ private fun BadgePreview() {
             UnreadBadge(count = 10)
             LanguageBadge(isLocal = true, sourceLanguage = "EN")
             LanguageBadge(isLocal = false, sourceLanguage = "EN")
+            GroupBadge(mangaCount = 5)
         }
     }
 }

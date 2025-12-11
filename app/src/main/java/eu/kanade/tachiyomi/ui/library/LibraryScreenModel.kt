@@ -62,6 +62,12 @@ import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.applyFilter
+import tachiyomi.domain.mangagroup.interactor.CreateMangaGroup
+import tachiyomi.domain.mangagroup.interactor.DeleteMangaGroup
+import tachiyomi.domain.mangagroup.interactor.GetMangaGroups
+import tachiyomi.domain.mangagroup.interactor.ManageMangaInGroup
+import tachiyomi.domain.mangagroup.interactor.SetMangaGroupCategories
+import tachiyomi.domain.mangagroup.interactor.UpdateMangaGroup
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracksPerManga
 import tachiyomi.domain.track.model.Track
@@ -71,6 +77,7 @@ import uy.kohesive.injekt.api.get
 import kotlin.random.Random
 
 class LibraryScreenModel(
+    private val groupId: Long? = null,
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracksPerManga: GetTracksPerManga = Injekt.get(),
@@ -87,6 +94,12 @@ class LibraryScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
     private val trackerManager: TrackerManager = Injekt.get(),
+    private val getMangaGroups: GetMangaGroups = Injekt.get(),
+    private val createMangaGroup: CreateMangaGroup = Injekt.get(),
+    private val updateMangaGroup: UpdateMangaGroup = Injekt.get(),
+    private val deleteMangaGroup: DeleteMangaGroup = Injekt.get(),
+    private val manageMangaInGroup: ManageMangaInGroup = Injekt.get(),
+    private val setMangaGroupCategories: SetMangaGroupCategories = Injekt.get(),
 ) : StateScreenModel<LibraryScreenModel.State>(State()) {
     var incognitoMode by preferences.incognitoMode().asState(screenModelScope)
 
@@ -101,11 +114,38 @@ class LibraryScreenModel(
                 getFavoritesFlow(),
                 combine(getTracksPerManga.subscribe(), getTrackingFiltersFlow(), ::Pair),
                 getLibraryItemPreferencesFlow(),
-            ) { searchQuery, categories, favorites, (tracksMap, trackingFilters), itemPreferences ->
+                if (groupId == null) getMangaGroups.subscribe() else flowOf(emptyList()),
+            ) { args: Array<Any?> ->
+                val searchQuery = args[0] as String?
+                val categories = args[1] as List<Category>
+                val favorites = args[2] as List<LibraryItem>
+                @Suppress("UNCHECKED_CAST")
+                val trackingPair = args[3] as Pair<Map<Long, List<Track>>, Map<Long, TriState>>
+                val itemPreferences = args[4] as ItemPreferences
+                @Suppress("UNCHECKED_CAST")
+                val allGroups = args[5] as List<tachiyomi.domain.mangagroup.model.MangaGroup>
+
+                val (tracksMap, trackingFilters) = trackingPair
+
                 val showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }
                 val filteredFavorites = favorites
+                    .let { if (groupId != null) it.filter { item -> item.libraryManga.groupId == groupId } else it }
                     .applyFilters(tracksMap, trackingFilters, itemPreferences)
                     .let { if (searchQuery == null) it else it.filter { m -> m.matches(searchQuery) } }
+
+                // Create LibraryGroup objects for groups
+                val groupsMap = if (groupId == null) {
+                    allGroups.associateBy({ it.id }) { group ->
+                        val mangaInGroup = favorites.filter { it.libraryManga.groupId == group.id }
+                        LibraryGroup(
+                            group = group,
+                            mangaList = mangaInGroup,
+                            categories = emptyList(), // Categories not needed for display
+                        )
+                    }
+                } else {
+                    emptyMap()
+                }
 
                 LibraryData(
                     isInitialized = true,
@@ -114,6 +154,7 @@ class LibraryScreenModel(
                     favorites = filteredFavorites,
                     tracksMap = tracksMap,
                     loggedInTrackerIds = trackingFilters.keys,
+                    groups = groupsMap,
                 )
             }
                 .distinctUntilChanged()
@@ -703,8 +744,104 @@ class LibraryScreenModel(
         mutableState.update { it.copy(dialog = Dialog.DeleteManga(state.value.selectedManga)) }
     }
 
+    fun openCreateGroupDialog() {
+        screenModelScope.launchIO {
+            val groups = getMangaGroups.await()
+            val existingNames = groups.map { it.name }.toImmutableList()
+            mutableState.update { it.copy(dialog = Dialog.CreateGroup(existingNames)) }
+        }
+    }
+
     fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
+    }
+
+    /**
+     * Creates a new manga group from the selected manga.
+     */
+    fun createGroup(name: String) {
+        val selectedManga = state.value.selection.toList()
+        if (selectedManga.isEmpty()) return
+
+        screenModelScope.launchIO {
+            // Use the first manga's cover as the default group cover
+            val firstManga = state.value.libraryData.favoritesById[selectedManga.first()]
+            val coverUrl = firstManga?.libraryManga?.manga?.thumbnailUrl
+
+            val groupId = createMangaGroup.await(name, selectedManga, coverUrl)
+
+            // Set group categories to match the first manga's categories
+            val categories = firstManga?.libraryManga?.categories.orEmpty()
+            if (categories.isNotEmpty()) {
+                setMangaGroupCategories.await(groupId, categories)
+            }
+        }
+    }
+
+    /**
+     * Removes selected manga from their groups.
+     */
+    fun removeFromGroup() {
+        val selectedManga = state.value.selection.toList()
+        if (selectedManga.isEmpty()) return
+
+        screenModelScope.launchIO {
+            selectedManga.forEach { mangaId ->
+                manageMangaInGroup.removeFromGroup(mangaId)
+            }
+        }
+    }
+
+    /**
+     * Deletes a group without deleting the manga.
+     */
+    fun deleteGroup(groupId: Long) {
+        screenModelScope.launchIO {
+            deleteMangaGroup.await(groupId)
+        }
+    }
+
+    /**
+     * Opens the edit group dialog.
+     */
+    fun openEditGroupDialog(groupId: Long) {
+        screenModelScope.launchIO {
+            val group = getMangaGroups.awaitOne(groupId) ?: return@launchIO
+            val groups = getMangaGroups.await()
+            val existingNames = groups.filter { it.id != groupId }.map { it.name }.toImmutableList()
+            mutableState.update {
+                it.copy(
+                    dialog = Dialog.EditGroup(
+                        groupId = groupId,
+                        currentName = group.name,
+                        existingGroupNames = existingNames,
+                    ),
+                )
+            }
+        }
+    }
+
+    /**
+     * Renames a group.
+     */
+    fun renameGroup(groupId: Long, newName: String) {
+        screenModelScope.launchIO {
+            updateMangaGroup.await(
+                tachiyomi.domain.mangagroup.model.MangaGroupUpdate(
+                    id = groupId,
+                    name = newName,
+                ),
+            )
+        }
+    }
+
+    /**
+     * Sets the cover for a group using the specified manga's cover URL.
+     */
+    fun setGroupCover(groupId: Long, coverUrl: String?) {
+        screenModelScope.launchIO {
+            updateMangaGroup.awaitUpdateCover(groupId, coverUrl)
+        }
     }
 
     sealed interface Dialog {
@@ -714,6 +851,13 @@ class LibraryScreenModel(
             val initialSelection: ImmutableList<CheckboxState<Category>>,
         ) : Dialog
         data class DeleteManga(val manga: List<Manga>) : Dialog
+        data class CreateGroup(val existingGroupNames: ImmutableList<String>) : Dialog
+        data class DeleteGroup(val groupId: Long, val groupName: String) : Dialog
+        data class EditGroup(
+            val groupId: Long,
+            val currentName: String,
+            val existingGroupNames: ImmutableList<String>,
+        ) : Dialog
     }
 
     @Immutable
@@ -741,6 +885,7 @@ class LibraryScreenModel(
         val favorites: List<LibraryItem> = emptyList(),
         val tracksMap: Map</* Manga */ Long, List<Track>> = emptyMap(),
         val loggedInTrackerIds: Set<Long> = emptySet(),
+        val groups: Map<Long, LibraryGroup> = emptyMap(),
     ) {
         val favoritesById by lazy { favorites.associateBy { it.id } }
     }
@@ -782,7 +927,54 @@ class LibraryScreenModel(
         }
 
         fun getItemsForCategory(category: Category): List<LibraryItem> {
-            return groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }
+            val items = groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }
+
+            // If no groups or in group detail view, return items as-is
+            if (libraryData.groups.isEmpty()) {
+                return items
+            }
+
+            // Collapse grouped manga into LibraryGroup representations
+            val groupedItems = mutableListOf<LibraryItem>()
+            val processedGroupIds = mutableSetOf<Long>()
+
+            items.forEach { item ->
+                val groupId = item.libraryManga.groupId
+                if (groupId != null && groupId !in processedGroupIds) {
+                    // This manga is in a group, add the group representation
+                    val group = libraryData.groups[groupId]
+                    if (group != null) {
+                        processedGroupIds.add(groupId)
+                        // Create a LibraryItem that represents the group
+                        // Use the first manga in the group as the base
+                        val firstManga = group.mangaList.firstOrNull()
+                        if (firstManga != null) {
+                            // Create a special LibraryItem with negative ID to represent the group
+                            // Store manga count in a special field (we'll use totalChapters temporarily)
+                            groupedItems.add(
+                                firstManga.copy(
+                                    libraryManga = firstManga.libraryManga.copy(
+                                        manga = firstManga.libraryManga.manga.copy(
+                                            id = -groupId,
+                                            title = group.group.name,
+                                            thumbnailUrl = group.group.coverUrl ?: firstManga.libraryManga.manga.thumbnailUrl,
+                                        ),
+                                        // Store manga count in totalChapters field for the badge
+                                        totalChapters = group.mangaList.size.toLong(),
+                                    ),
+                                    unreadCount = group.unreadCount,
+                                    downloadCount = group.downloadCount,
+                                ),
+                            )
+                        }
+                    }
+                } else if (groupId == null) {
+                    // This manga is not in any group, add it normally
+                    groupedItems.add(item)
+                }
+            }
+
+            return groupedItems
         }
 
         fun getItemCountForCategory(category: Category): Int? {

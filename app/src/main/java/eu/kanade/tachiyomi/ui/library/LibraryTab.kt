@@ -36,6 +36,8 @@ import eu.kanade.presentation.library.LibrarySettingsDialog
 import eu.kanade.presentation.library.components.LibraryContent
 import eu.kanade.presentation.library.components.LibraryToolbar
 import eu.kanade.presentation.manga.components.LibraryBottomActionMenu
+import eu.kanade.presentation.mangagroup.components.MangaGroupCreateDialog
+import eu.kanade.presentation.mangagroup.components.MangaGroupDeleteDialog
 import eu.kanade.presentation.more.onboarding.GETTING_STARTED_URL
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
@@ -45,6 +47,7 @@ import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
+import eu.kanade.tachiyomi.ui.mangagroup.MangaGroupScreen
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.Channel
@@ -161,6 +164,8 @@ data object LibraryTab : Tab {
                         screenModel.clearSelection()
                         navigator.push(MigrationConfigScreen(selection))
                     },
+                    onGroupClicked = screenModel::openCreateGroupDialog
+                        .takeIf { state.selection.size >= 2 },
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -193,7 +198,23 @@ data object LibraryTab : Tab {
                         hasActiveFilters = state.hasActiveFilters,
                         showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),
                         onChangeCurrentPage = screenModel::updateActiveCategoryIndex,
-                        onClickManga = { navigator.push(MangaScreen(it)) },
+                        onClickManga = { mangaId ->
+                            // Check if this is a group (negative ID means group)
+                            if (mangaId < 0) {
+                                val groupId = -mangaId
+                                val group = state.libraryData.groups[groupId]
+                                if (group != null) {
+                                    navigator.push(
+                                        MangaGroupScreen(
+                                            groupId = groupId,
+                                            groupName = group.group.name,
+                                        ),
+                                    )
+                                }
+                            } else {
+                                navigator.push(MangaScreen(mangaId))
+                            }
+                        },
                         onContinueReadingClicked = { it: LibraryManga ->
                             scope.launchIO {
                                 val chapter = screenModel.getNextUnreadChapter(it.manga)
@@ -259,7 +280,26 @@ data object LibraryTab : Tab {
                     },
                 )
             }
-            null -> {}
+            is LibraryScreenModel.Dialog.CreateGroup -> {
+                MangaGroupCreateDialog(
+                    onDismissRequest = onDismissRequest,
+                    onCreate = { name ->
+                        screenModel.createGroup(name)
+                        screenModel.clearSelection()
+                    },
+                    existingGroupNames = dialog.existingGroupNames,
+                )
+            }
+            is LibraryScreenModel.Dialog.DeleteGroup -> {
+                MangaGroupDeleteDialog(
+                    onDismissRequest = onDismissRequest,
+                    onConfirm = {
+                        screenModel.deleteGroup(dialog.groupId)
+                    },
+                    groupName = dialog.groupName,
+                )
+            }
+            else -> {}
         }
 
         BackHandler(enabled = state.selectionMode || state.searchQuery != null) {

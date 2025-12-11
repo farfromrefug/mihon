@@ -43,12 +43,14 @@ fun HistoryWidget(
     data: ImmutableList<Pair<HistoryWithRelations, Bitmap?>>?,
     contentColor: ColorProvider,
     grid: GridMetrics,
+    padding: Dp = 0.dp,
     isEInk: Boolean = false,
+    alignedCenter: Boolean = false,
     modifier: GlanceModifier = GlanceModifier,
 ) {
     Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier,
+        contentAlignment = if (alignedCenter) Alignment.Center else Alignment.TopStart,
+        modifier = modifier.padding(padding),
     ) {
         if (data == null) {
             CircularProgressIndicator(color = contentColor)
@@ -61,8 +63,8 @@ fun HistoryWidget(
 
             Column(
                 modifier = GlanceModifier.fillMaxHeight(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalAlignment = if (alignedCenter) Alignment.CenterVertically else Alignment.Top,
+                horizontalAlignment = if (alignedCenter) Alignment.CenterHorizontally else Alignment.Start,
             ) {
                 // The grid is row-major: nbRows x columnCount
                 val rowCount = grid.rows
@@ -78,8 +80,8 @@ fun HistoryWidget(
                             modifier = GlanceModifier
                                 .padding(vertical = 4.dp)
                                 .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalAlignment = if (alignedCenter) Alignment.CenterHorizontally else Alignment.Start,
+                            verticalAlignment = if (alignedCenter) Alignment.CenterVertically else Alignment.Top,
                         ) {
                             historyRow.forEach { (history, cover) ->
                                 Box(

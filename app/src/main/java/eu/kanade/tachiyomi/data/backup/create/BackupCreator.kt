@@ -8,12 +8,14 @@ import eu.kanade.tachiyomi.data.backup.BackupFileValidator
 import eu.kanade.tachiyomi.data.backup.create.creators.CategoriesBackupCreator
 import eu.kanade.tachiyomi.data.backup.create.creators.ExtensionRepoBackupCreator
 import eu.kanade.tachiyomi.data.backup.create.creators.MangaBackupCreator
+import eu.kanade.tachiyomi.data.backup.create.creators.MangaGroupBackupCreator
 import eu.kanade.tachiyomi.data.backup.create.creators.PreferenceBackupCreator
 import eu.kanade.tachiyomi.data.backup.create.creators.SourcesBackupCreator
 import eu.kanade.tachiyomi.data.backup.models.Backup
 import eu.kanade.tachiyomi.data.backup.models.BackupCategory
 import eu.kanade.tachiyomi.data.backup.models.BackupExtensionRepos
 import eu.kanade.tachiyomi.data.backup.models.BackupManga
+import eu.kanade.tachiyomi.data.backup.models.BackupMangaGroup
 import eu.kanade.tachiyomi.data.backup.models.BackupPreference
 import eu.kanade.tachiyomi.data.backup.models.BackupSource
 import eu.kanade.tachiyomi.data.backup.models.BackupSourcePreferences
@@ -48,6 +50,7 @@ class BackupCreator(
 
     private val categoriesBackupCreator: CategoriesBackupCreator = CategoriesBackupCreator(),
     private val mangaBackupCreator: MangaBackupCreator = MangaBackupCreator(),
+    private val mangaGroupBackupCreator: MangaGroupBackupCreator = MangaGroupBackupCreator(),
     private val preferenceBackupCreator: PreferenceBackupCreator = PreferenceBackupCreator(),
     private val extensionRepoBackupCreator: ExtensionRepoBackupCreator = ExtensionRepoBackupCreator(),
     private val sourcesBackupCreator: SourcesBackupCreator = SourcesBackupCreator(),
@@ -87,6 +90,7 @@ class BackupCreator(
                 backupPreferences = backupAppPreferences(options),
                 backupExtensionRepo = backupExtensionRepos(options),
                 backupSourcePreferences = backupSourcePreferences(options),
+                backupMangaGroups = backupMangaGroups(options),
             )
 
             val byteArray = parser.encodeToByteArray(Backup.serializer(), backup)
@@ -151,6 +155,12 @@ class BackupCreator(
         if (!options.sourceSettings) return emptyList()
 
         return preferenceBackupCreator.createSource(includePrivatePreferences = options.privateSettings)
+    }
+
+    private suspend fun backupMangaGroups(options: BackupOptions): List<BackupMangaGroup> {
+        if (!options.libraryEntries) return emptyList()
+
+        return mangaGroupBackupCreator()
     }
 
     companion object {

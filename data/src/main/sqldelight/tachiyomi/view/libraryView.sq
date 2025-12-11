@@ -7,7 +7,8 @@ SELECT
     coalesce(C.fetchedAt, 0) AS chapterFetchedAt,
     coalesce(C.lastRead, 0) AS lastRead,
     coalesce(C.bookmarkCount, 0) AS bookmarkCount,
-    coalesce(MC.categories, '0') AS categories
+    coalesce(MC.categories, '0') AS categories,
+    MGM.group_id AS groupId
 FROM mangas M
 LEFT JOIN (
     SELECT
@@ -34,6 +35,8 @@ LEFT JOIN (
     GROUP BY manga_id
 ) AS MC
 ON MC.manga_id = M._id
+LEFT JOIN manga_group_members MGM
+ON M._id = MGM.manga_id
 WHERE M.favorite = 1;
 
 library:

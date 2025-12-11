@@ -30,3 +30,78 @@ JOIN chapters
 ON mangas._id = chapters.manga_id
 JOIN history
 ON chapters._id = history.chapter_id;
+
+-- Create manga groups tables for grouping manga together
+CREATE TABLE manga_groups(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    cover_url TEXT,
+    date_created INTEGER NOT NULL
+);
+
+CREATE TABLE manga_group_members(
+    manga_id INTEGER NOT NULL,
+    group_id INTEGER NOT NULL,
+    PRIMARY KEY(manga_id),
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(group_id) REFERENCES manga_groups (_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE manga_groups_categories(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    group_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    FOREIGN KEY(category_id) REFERENCES categories (_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(group_id) REFERENCES manga_groups (_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX manga_group_members_group_id_index ON manga_group_members(group_id);
+CREATE INDEX manga_groups_categories_group_id_index ON manga_groups_categories(group_id);
+
+-- Recreate libraryView to include group information
+DROP VIEW IF EXISTS libraryView;
+CREATE VIEW libraryView AS
+SELECT
+    M.*,
+    coalesce(C.total, 0) AS totalCount,
+    coalesce(C.readCount, 0) AS readCount,
+    coalesce(C.latestUpload, 0) AS latestUpload,
+    coalesce(C.fetchedAt, 0) AS chapterFetchedAt,
+    coalesce(C.lastRead, 0) AS lastRead,
+    coalesce(C.bookmarkCount, 0) AS bookmarkCount,
+    coalesce(MC.categories, '0') AS categories,
+    MGM.group_id AS groupId
+FROM mangas M
+LEFT JOIN (
+    SELECT
+        chapters.manga_id,
+        count(*) AS total,
+        sum(read) AS readCount,
+        coalesce(max(chapters.date_upload), 0) AS latestUpload,
+        coalesce(max(history.last_read), 0) AS lastRead,
+        coalesce(max(chapters.date_fetch), 0) AS fetchedAt,
+        sum(chapters.bookmark) AS bookmarkCount
+    FROM chapters
+    LEFT JOIN excluded_scanlators
+    ON chapters.manga_id = excluded_scanlators.manga_id
+    AND chapters.scanlator = excluded_scanlators.scanlator
+    LEFT JOIN history
+    ON chapters._id = history.chapter_id
+    WHERE excluded_scanlators.scanlator IS NULL
+    GROUP BY chapters.manga_id
+) AS C
+ON M._id = C.manga_id
+LEFT JOIN (
+    SELECT manga_id, group_concat(category_id) AS categories
+    FROM mangas_categories
+    GROUP BY manga_id
+) AS MC
+ON MC.manga_id = M._id
+LEFT JOIN manga_group_members MGM
+ON M._id = MGM.manga_id
+WHERE M.favorite = 1;
+

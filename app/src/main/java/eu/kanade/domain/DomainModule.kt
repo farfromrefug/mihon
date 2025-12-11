@@ -42,6 +42,7 @@ import tachiyomi.data.chapter.ChapterColorFilterRepositoryImpl
 import tachiyomi.data.chapter.ChapterRepositoryImpl
 import tachiyomi.data.history.HistoryRepositoryImpl
 import tachiyomi.data.manga.MangaRepositoryImpl
+import tachiyomi.data.mangagroup.MangaGroupRepositoryImpl
 import tachiyomi.data.release.ReleaseServiceImpl
 import tachiyomi.data.source.SourceRepositoryImpl
 import tachiyomi.data.source.StubSourceRepositoryImpl
@@ -86,6 +87,13 @@ import tachiyomi.domain.manga.interactor.ResetViewerFlags
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.interactor.UpdateMangaNotes
 import tachiyomi.domain.manga.repository.MangaRepository
+import tachiyomi.domain.mangagroup.interactor.CreateMangaGroup
+import tachiyomi.domain.mangagroup.interactor.DeleteMangaGroup
+import tachiyomi.domain.mangagroup.interactor.GetMangaGroups
+import tachiyomi.domain.mangagroup.interactor.ManageMangaInGroup
+import tachiyomi.domain.mangagroup.interactor.SetMangaGroupCategories
+import tachiyomi.domain.mangagroup.interactor.UpdateMangaGroup
+import tachiyomi.domain.mangagroup.repository.MangaGroupRepository
 import tachiyomi.domain.release.interactor.GetApplicationRelease
 import tachiyomi.domain.release.service.ReleaseService
 import tachiyomi.domain.source.interactor.GetRemoteManga
@@ -144,6 +152,14 @@ class DomainModule : InjektModule {
                 get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
             )
         }
+
+        addSingletonFactory<MangaGroupRepository> { MangaGroupRepositoryImpl(get()) }
+        addFactory { CreateMangaGroup(get()) }
+        addFactory { GetMangaGroups(get()) }
+        addFactory { UpdateMangaGroup(get()) }
+        addFactory { DeleteMangaGroup(get()) }
+        addFactory { ManageMangaInGroup(get()) }
+        addFactory { SetMangaGroupCategories(get()) }
 
         addSingletonFactory<ReleaseService> { ReleaseServiceImpl(get(), get()) }
         addFactory { GetApplicationRelease(get(), get()) }

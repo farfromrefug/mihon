@@ -93,6 +93,7 @@ object MangaMapper {
         lastRead: Long,
         bookmarkCount: Double,
         categories: String,
+        groupId: Long?,
     ): LibraryManga = LibraryManga(
         manga = mapManga(
             id,
@@ -128,6 +129,7 @@ object MangaMapper {
         latestUpload = latestUpload,
         chapterFetchedAt = chapterFetchedAt,
         lastRead = lastRead,
+        groupId = groupId,
     )
 
     fun mapMangaWithChapterCount(

@@ -270,6 +270,7 @@ fun SearchToolbar(
     navigateUp: (() -> Unit)? = null,
     searchEnabled: Boolean = true,
     placeholderText: String? = null,
+    navigationIcon: ImageVector? = null,
     onSearch: (String) -> Unit = {},
     onClickCloseSearch: () -> Unit = { onChangeSearchQuery(null) },
     actions: @Composable RowScope.() -> Unit = {},
@@ -341,6 +342,7 @@ fun SearchToolbar(
             )
         },
         navigateUp = if (searchQuery == null) navigateUp else onClickCloseSearch,
+        navigationIcon = navigationIcon,
         actions = {
             key("search") {
                 val onClick = { onChangeSearchQuery("") }

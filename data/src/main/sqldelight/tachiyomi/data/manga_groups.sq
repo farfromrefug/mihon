@@ -1,0 +1,108 @@
+import kotlin.Boolean;
+
+CREATE TABLE manga_groups(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    cover_url TEXT,
+    date_created INTEGER NOT NULL
+);
+
+CREATE TABLE manga_group_members(
+    manga_id INTEGER NOT NULL,
+    group_id INTEGER NOT NULL,
+    PRIMARY KEY(manga_id),
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(group_id) REFERENCES manga_groups (_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE manga_groups_categories(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    group_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    FOREIGN KEY(category_id) REFERENCES categories (_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY(group_id) REFERENCES manga_groups (_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX manga_group_members_group_id_index ON manga_group_members(group_id);
+CREATE INDEX manga_groups_categories_group_id_index ON manga_groups_categories(group_id);
+
+-- Get all groups
+getAll:
+SELECT *
+FROM manga_groups;
+
+-- Get group by ID
+getById:
+SELECT *
+FROM manga_groups
+WHERE _id = :id;
+
+-- Get groups for a specific manga
+getByMangaId:
+SELECT G.*
+FROM manga_groups G
+JOIN manga_group_members M
+ON G._id = M.group_id
+WHERE M.manga_id = :mangaId;
+
+-- Get all manga in a group
+getMangaInGroup:
+SELECT manga_id
+FROM manga_group_members
+WHERE group_id = :groupId;
+
+-- Get group categories
+getGroupCategories:
+SELECT category_id
+FROM manga_groups_categories
+WHERE group_id = :groupId;
+
+-- Insert group
+insert:
+INSERT INTO manga_groups(name, cover_url, date_created)
+VALUES (:name, :coverUrl, :dateCreated);
+
+-- Update group
+update:
+UPDATE manga_groups
+SET name = coalesce(:name, name),
+    cover_url = coalesce(:coverUrl, cover_url)
+WHERE _id = :groupId;
+
+-- Update group cover (allows NULL to clear)
+updateCover:
+UPDATE manga_groups
+SET cover_url = :coverUrl
+WHERE _id = :groupId;
+
+-- Delete group
+delete:
+DELETE FROM manga_groups
+WHERE _id = :groupId;
+
+-- Add manga to group
+addMangaToGroup:
+INSERT OR REPLACE INTO manga_group_members(manga_id, group_id)
+VALUES (:mangaId, :groupId);
+
+-- Remove manga from group
+removeMangaFromGroup:
+DELETE FROM manga_group_members
+WHERE manga_id = :mangaId;
+
+-- Add group to category
+addGroupToCategory:
+INSERT INTO manga_groups_categories(group_id, category_id)
+VALUES (:groupId, :categoryId);
+
+-- Delete group categories
+deleteGroupCategories:
+DELETE FROM manga_groups_categories
+WHERE group_id = :groupId;
+
+selectLastInsertedRowId:
+SELECT last_insert_rowid();

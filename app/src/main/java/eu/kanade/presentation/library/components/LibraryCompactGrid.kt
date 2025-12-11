@@ -34,6 +34,9 @@ internal fun LibraryCompactGrid(
             contentType = { "library_compact_grid_item" },
         ) { libraryItem ->
             val manga = libraryItem.libraryManga.manga
+            val isGroup = manga.id < 0
+            val mangaCount = if (isGroup) libraryItem.libraryManga.totalChapters.toInt() else 0
+            
             MangaCompactGridItem(
                 isSelected = manga.id in selection,
                 title = manga.title.takeIf { showTitle },
@@ -45,6 +48,9 @@ internal fun LibraryCompactGrid(
                     lastModified = manga.coverLastModified,
                 ),
                 coverBadgeStart = {
+                    if (isGroup) {
+                        GroupBadge(mangaCount = mangaCount)
+                    }
                     DownloadsBadge(count = libraryItem.downloadCount)
                     UnreadBadge(count = libraryItem.unreadCount)
                 },
