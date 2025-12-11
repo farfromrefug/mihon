@@ -40,6 +40,8 @@ fun LibraryToolbar(
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
+    navigationIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClickNavigationIcon: (() -> Unit)? = null,
 ) = when {
     selectedCount > 0 -> LibrarySelectionToolbar(
         selectedCount = selectedCount,
@@ -57,6 +59,8 @@ fun LibraryToolbar(
         onClickGlobalUpdate = onClickGlobalUpdate,
         onClickOpenRandomManga = onClickOpenRandomManga,
         scrollBehavior = scrollBehavior,
+        navigationIcon = navigationIcon,
+        onClickNavigationIcon = onClickNavigationIcon,
     )
 }
 
@@ -71,9 +75,13 @@ private fun LibraryRegularToolbar(
     onClickGlobalUpdate: () -> Unit,
     onClickOpenRandomManga: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
+    navigationIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClickNavigationIcon: (() -> Unit)? = null,
 ) {
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
     SearchToolbar(
+        navigationIcon = navigationIcon,
+        onClickNavigationIcon = onClickNavigationIcon,
         titleContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

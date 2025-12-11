@@ -249,6 +249,8 @@ fun LibraryBottomActionMenu(
     onDeleteClicked: () -> Unit,
     onMigrateClicked: () -> Unit,
     onGroupClicked: (() -> Unit)? = null,
+    onRemoveFromGroupClicked: (() -> Unit)? = null,
+    onSetGroupCoverClicked: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -274,7 +276,8 @@ fun LibraryBottomActionMenu(
                     if (isActive) confirm[toConfirmIndex] = false
                 }
             }
-            val itemOverflow = onDownloadClicked != null || onGroupClicked != null
+            val itemOverflow = onDownloadClicked != null || onGroupClicked != null || 
+                onRemoveFromGroupClicked != null || onSetGroupCoverClicked != null
             Row(
                 modifier = Modifier
                     .windowInsetsPadding(
@@ -356,6 +359,24 @@ fun LibraryBottomActionMenu(
                                     onClick = {
                                         overflowMenuOpen = false
                                         onGroupClicked()
+                                    },
+                                )
+                            }
+                            if (onRemoveFromGroupClicked != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(MR.strings.action_remove_from_group)) },
+                                    onClick = {
+                                        overflowMenuOpen = false
+                                        onRemoveFromGroupClicked()
+                                    },
+                                )
+                            }
+                            if (onSetGroupCoverClicked != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(MR.strings.action_set_group_cover)) },
+                                    onClick = {
+                                        overflowMenuOpen = false
+                                        onSetGroupCoverClicked()
                                     },
                                 )
                             }

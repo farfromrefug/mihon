@@ -88,6 +88,9 @@ data class MangaGroupScreen(
                     searchQuery = state.searchQuery,
                     onSearchQueryChange = screenModel::search,
                     scrollBehavior = scrollBehavior,
+                    // Add back button
+                    navigationIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+                    onClickNavigationIcon = { navigator.pop() },
                 )
             },
             bottomBar = {
@@ -104,10 +107,18 @@ data class MangaGroupScreen(
                         screenModel.clearSelection()
                         navigator.push(MigrationConfigScreen(selection))
                     },
-                    // Special group actions
-                    onGroupClicked = {
+                    // Group-specific actions
+                    onRemoveFromGroupClicked = {
                         screenModel.removeFromGroup()
                         screenModel.clearSelection()
+                    }.takeIf { state.selection.isNotEmpty() },
+                    onSetGroupCoverClicked = {
+                        // Set the first selected manga's cover as the group cover
+                        val selectedManga = state.selectedManga.firstOrNull()
+                        if (selectedManga != null) {
+                            screenModel.setGroupCover(groupId, selectedManga.manga.thumbnailUrl)
+                            screenModel.clearSelection()
+                        }
                     }.takeIf { state.selection.isNotEmpty() },
                 )
             },

@@ -832,6 +832,15 @@ class LibraryScreenModel(
         }
     }
 
+    /**
+     * Sets the cover for a group using the specified manga's cover URL.
+     */
+    fun setGroupCover(groupId: Long, coverUrl: String?) {
+        screenModelScope.launchIO {
+            updateMangaGroup.awaitUpdateCover(groupId, coverUrl)
+        }
+    }
+
     sealed interface Dialog {
         data object SettingsSheet : Dialog
         data class ChangeCategory(
