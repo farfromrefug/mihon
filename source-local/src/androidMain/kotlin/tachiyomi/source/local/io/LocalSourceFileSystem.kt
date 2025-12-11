@@ -22,6 +22,17 @@ actual class LocalSourceFileSystem(
     }
 
     actual fun getFilesInMangaDirectory(name: String): List<UniFile> {
-        return getMangaDirectory(name)?.listFiles().orEmpty().toList()
+        // we look recursively for mangas
+        val root = getMangaDirectory(name) ?: return emptyList()
+        val result = mutableListOf<UniFile>()
+
+        fun collect(dir: UniFile) {
+            dir.listFiles()?.forEach { child ->
+                if (child.isDirectory) collect(child) else result += child
+            }
+        }
+
+        collect(root)
+        return result
     }
 }

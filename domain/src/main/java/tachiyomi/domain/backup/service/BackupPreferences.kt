@@ -7,7 +7,7 @@ class BackupPreferences(
     private val preferenceStore: PreferenceStore,
 ) {
 
-    fun backupInterval() = preferenceStore.getInt("backup_interval", 12)
+    fun backupInterval() = preferenceStore.getInt("backup_interval", 0)
 
     fun lastAutoBackupTimestamp() = preferenceStore.getLong(Preference.appStateKey("last_auto_backup_timestamp"), 0L)
 }

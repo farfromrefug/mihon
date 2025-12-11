@@ -33,7 +33,7 @@ class SourcePreferences(
         -1,
     )
 
-    fun showNsfwSource() = preferenceStore.getBoolean("show_nsfw_source", true)
+    fun showNsfwSource() = preferenceStore.getBoolean("show_nsfw_source", false)
 
     fun migrationSortingMode() = preferenceStore.getEnum("pref_migration_sorting", SetMigrateSorting.Mode.ALPHABETICAL)
 
