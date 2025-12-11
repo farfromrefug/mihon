@@ -1112,4 +1112,13 @@
     <string name="migrationListScreen.migrateDialog.cancelLabel">Cancel</string>
     <string name="migrationListScreen.progressDialog.cancelLabel">Cancel</string>
     <string name="migrationListScreen.matchWithoutChapterToast">No chapters found, this entry cannot be used for migration</string>
+
+    <!-- Chapter info dialog -->
+    <string name="chapter_info">Chapter info</string>
+    <string name="chapter_number">Chapter number</string>
+    <string name="label_source">Source</string>
+    <string name="label_date_uploaded">Date uploaded</string>
+    <string name="file_name">File name</string>
+    <string name="file_path">File path</string>
+    <string name="file_size">File size</string>
 </resources>

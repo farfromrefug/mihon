@@ -139,6 +139,7 @@ fun MangaScreen(
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
     onMultiDeleteClicked: (List<Chapter>) -> Unit,
     onSetChapterCoverAsMangaCover: ((Chapter) -> Unit)? = null,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
 
     // For chapter swipe
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -325,6 +326,7 @@ private fun MangaScreenSmallImpl(
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
     onMultiDeleteClicked: (List<Chapter>) -> Unit,
     onSetChapterCoverAsMangaCover: ((Chapter) -> Unit)? = null,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
 
     // For chapter swipe
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -399,6 +401,7 @@ private fun MangaScreenSmallImpl(
                 onDownloadChapter = onDownloadChapter,
                 onMultiDeleteClicked = onMultiDeleteClicked,
                 onSetChapterCoverAsMangaCover = onSetChapterCoverAsMangaCover,
+                onShowChapterInfo = onShowChapterInfo,
                 fillFraction = 1f,
             )
         },
@@ -699,6 +702,7 @@ fun MangaScreenLargeImpl(
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
     onMultiDeleteClicked: (List<Chapter>) -> Unit,
     onSetChapterCoverAsMangaCover: ((Chapter) -> Unit)? = null,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
 
     // For swipe actions
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -769,6 +773,7 @@ fun MangaScreenLargeImpl(
                     onDownloadChapter = onDownloadChapter,
                     onMultiDeleteClicked = onMultiDeleteClicked,
                     onSetChapterCoverAsMangaCover = onSetChapterCoverAsMangaCover,
+                    onShowChapterInfo = onShowChapterInfo,
                     fillFraction = 0.5f,
                 )
             }
@@ -1048,6 +1053,7 @@ private fun MangaScreenCompactImpl(
                 onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
                 onDownloadChapter = onDownloadChapter,
                 onMultiDeleteClicked = onMultiDeleteClicked,
+                onShowChapterInfo = onShowChapterInfo,
                 fillFraction = 1f,
             )
         },
@@ -1249,6 +1255,8 @@ private fun SharedMangaBottomActionMenu(
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onMultiDeleteClicked: (List<Chapter>) -> Unit,
     onSetChapterCoverAsMangaCover: ((Chapter) -> Unit)? = null,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
     fillFraction: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -1285,6 +1293,12 @@ private fun SharedMangaBottomActionMenu(
         }.takeIf {
             // Show only when a single chapter is selected and it has a cover URL
             onSetChapterCoverAsMangaCover != null && selected.size == 1 && !selected[0].chapter.coverUrl.isNullOrEmpty()
+        },
+        onShowChapterInfoClicked = {
+            onShowChapterInfo!!(selected[0].chapter)
+        }.takeIf {
+            // Show only when a single chapter is selected
+            onShowChapterInfo != null && selected.size == 1
         },
     )
 }

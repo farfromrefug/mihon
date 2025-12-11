@@ -79,6 +79,7 @@ fun MangaBottomActionMenu(
     onDownloadClicked: (() -> Unit)? = null,
     onDeleteClicked: (() -> Unit)? = null,
     onSetAsCoverClicked: (() -> Unit)? = null,
+    onShowChapterInfoClicked: (() -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -182,6 +183,15 @@ fun MangaBottomActionMenu(
                         toConfirm = confirm[7],
                         onLongClick = { onLongClickItem(7) },
                         onClick = onSetAsCoverClicked,
+                    )
+                }
+                if (onShowChapterInfoClicked != null) {
+                    Button(
+                        title = stringResource(MR.strings.chapter_info),
+                        icon = Icons.Outlined.MoreVert,
+                        toConfirm = false,
+                        onLongClick = {},
+                        onClick = onShowChapterInfoClicked,
                     )
                 }
             }

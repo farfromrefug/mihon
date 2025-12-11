@@ -809,6 +809,46 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
+    fun openChapterInfoDialog() {
+        val chapter = state.value.currentChapter?.chapter ?: return
+        val manga = state.value.manga ?: return
+        val source = sourceManager.getOrStub(manga.source)
+        
+        // Extract file info for local sources
+        val (fileName, filePath, fileSize) = if (source.isLocal()) {
+            extractLocalChapterInfo(chapter)
+        } else {
+            Triple(null, null, null)
+        }
+        
+        val chapterInfo = eu.kanade.presentation.reader.ChapterInfo(
+            chapterName = chapter.name,
+            chapterNumber = if (chapter.chapterNumber >= 0) chapter.chapterNumber.toString() else null,
+            scanlator = chapter.scanlator,
+            sourceName = source.name,
+            dateUpload = chapter.dateUpload,
+            fileName = fileName,
+            filePath = filePath,
+            fileSize = fileSize,
+        )
+        
+        mutableState.update { it.copy(dialog = Dialog.ChapterInfo(chapterInfo)) }
+    }
+    
+    private fun extractLocalChapterInfo(chapter: tachiyomi.domain.chapter.model.Chapter): Triple<String?, String?, Long?> {
+        // Extract file name from URL
+        val fileName = chapter.url.substringAfterLast('/')
+        
+        // For local sources, the URL is the path
+        val filePath = chapter.url
+        
+        // File size - we would need to actually read the file to get the size
+        // For now, return null as we'd need to add proper file system access
+        val fileSize: Long? = null
+        
+        return Triple(fileName, filePath, fileSize)
+    }
+
     fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
@@ -1045,6 +1085,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object ReadingModeSelect : Dialog
         data object OrientationModeSelect : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
+        data class ChapterInfo(val chapterInfo: eu.kanade.presentation.reader.ChapterInfo) : Dialog
     }
 
     sealed interface Event {

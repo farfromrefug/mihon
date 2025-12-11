@@ -371,6 +371,12 @@ class ReaderActivity : BaseActivity() {
                     onSave = viewModel::saveImage,
                 )
             }
+            is ReaderViewModel.Dialog.ChapterInfo -> {
+                eu.kanade.presentation.reader.ChapterInfoDialog(
+                    chapterInfo = state.dialog.chapterInfo,
+                    onDismissRequest = onDismissRequest,
+                )
+            }
             null -> {}
         }
     }
@@ -511,6 +517,7 @@ class ReaderActivity : BaseActivity() {
             onOpenInWebView = ::openChapterInWebView.takeIf { isHttpSource },
             onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource },
             onShare = ::shareChapter.takeIf { isHttpSource },
+            onShowChapterInfo = viewModel::openChapterInfoDialog,
 
             viewer = state.viewer,
             onNextChapter = ::loadNextChapter,
