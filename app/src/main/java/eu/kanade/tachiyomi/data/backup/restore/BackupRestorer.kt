@@ -47,11 +47,11 @@ class BackupRestorer(
      * Mapping of source ID to source name from backup data
      */
     private var sourceMapping: Map<Long, String> = emptyMap()
-    
+
     /**
      * Mapping of old manga IDs to new manga IDs after restoration
      */
-    private val mangaIdMapping = mutableMapOf<Long, Long>()
+    private val mangaSourceUrlMapping = mutableMapOf<Pair<Long, String>, Long>()
 
     suspend fun restore(uri: Uri, options: RestoreOptions) {
         val startTime = System.currentTimeMillis()
@@ -143,13 +143,13 @@ class BackupRestorer(
 
                 try {
                     mangaRestorer.restore(backupManga, backupCategories)
-                    
+
                     // After restoration, look up the manga to get its new ID
                     val restoredManga = mangaRestorer.findMangaByUrlAndSource(
                         backupManga.url,
                         backupManga.source,
                     )
-                    
+
                     // Store mapping from (source, url) to restored ID for group restoration
                     if (restoredManga != null) {
                         mangaSourceUrlMapping[backupManga.source to backupManga.url] = restoredManga.id

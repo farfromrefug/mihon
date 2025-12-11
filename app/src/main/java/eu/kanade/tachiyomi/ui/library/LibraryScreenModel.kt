@@ -112,8 +112,18 @@ class LibraryScreenModel(
                 combine(getTracksPerManga.subscribe(), getTrackingFiltersFlow(), ::Pair),
                 getLibraryItemPreferencesFlow(),
                 if (groupId == null) getMangaGroups.subscribe() else flowOf(emptyList()),
-            ) { searchQuery, categories, favorites, trackingPair, itemPreferences, allGroups ->
+            ) { args: Array<Any?> ->
+                val searchQuery = args[0] as String?
+                val categories = args[1] as List<Category>
+                val favorites = args[2] as List<LibraryItem>
+                @Suppress("UNCHECKED_CAST")
+                val trackingPair = args[3] as Pair<Map<Long, List<Track>>, Map<Long, TriState>>
+                val itemPreferences = args[4] as ItemPreferences
+                @Suppress("UNCHECKED_CAST")
+                val allGroups = args[5] as List<tachiyomi.domain.mangagroup.model.MangaGroup>
+
                 val (tracksMap, trackingFilters) = trackingPair
+
                 val showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }
                 val filteredFavorites = favorites
                     .let { if (groupId != null) it.filter { item -> item.libraryManga.groupId == groupId } else it }
@@ -796,7 +806,7 @@ class LibraryScreenModel(
             val group = getMangaGroups.awaitOne(groupId) ?: return@launchIO
             val groups = getMangaGroups.await()
             val existingNames = groups.filter { it.id != groupId }.map { it.name }.toImmutableList()
-            mutableState.update { 
+            mutableState.update {
                 it.copy(
                     dialog = Dialog.EditGroup(
                         groupId = groupId,
@@ -906,16 +916,16 @@ class LibraryScreenModel(
 
         fun getItemsForCategory(category: Category): List<LibraryItem> {
             val items = groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }
-            
+
             // If no groups or in group detail view, return items as-is
             if (libraryData.groups.isEmpty()) {
                 return items
             }
-            
+
             // Collapse grouped manga into LibraryGroup representations
             val groupedItems = mutableListOf<LibraryItem>()
             val processedGroupIds = mutableSetOf<Long>()
-            
+
             items.forEach { item ->
                 val groupId = item.libraryManga.groupId
                 if (groupId != null && groupId !in processedGroupIds) {
@@ -951,7 +961,7 @@ class LibraryScreenModel(
                     groupedItems.add(item)
                 }
             }
-            
+
             return groupedItems
         }
 

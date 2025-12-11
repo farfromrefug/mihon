@@ -44,6 +44,7 @@ import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
+import eu.kanade.tachiyomi.ui.mangagroup.MangaGroupScreen
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.Channel
@@ -198,7 +199,7 @@ data object LibraryTab : Tab {
                                 val group = state.libraryData.groups[groupId]
                                 if (group != null) {
                                     navigator.push(
-                                        eu.kanade.tachiyomi.ui.mangagroup.MangaGroupScreen(
+                                        MangaGroupScreen(
                                             groupId = groupId,
                                             groupName = group.group.name,
                                         ),
@@ -292,7 +293,7 @@ data object LibraryTab : Tab {
                     groupName = dialog.groupName,
                 )
             }
-            null -> {}
+            else -> {}
         }
 
         BackHandler(enabled = state.selectionMode || state.searchQuery != null) {

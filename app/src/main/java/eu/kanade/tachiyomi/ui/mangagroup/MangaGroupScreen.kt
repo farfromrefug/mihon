@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.util.fastAll
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.category.components.ChangeCategoryDialog
@@ -26,6 +25,7 @@ import eu.kanade.presentation.library.DeleteLibraryMangaDialog
 import eu.kanade.presentation.library.components.LibraryContent
 import eu.kanade.presentation.library.components.LibraryToolbar
 import eu.kanade.presentation.manga.components.LibraryBottomActionMenu
+import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.library.LibraryScreenModel
@@ -47,7 +47,11 @@ import tachiyomi.source.local.isLocal
 data class MangaGroupScreen(
     val groupId: Long,
     val groupName: String,
-) : Screen {
+): Screen(), AssistContentScreen {
+
+    private var assistUrl: String? = null
+
+    override fun onProvideAssistUrl() = assistUrl
 
     @Composable
     override fun Content() {
@@ -142,7 +146,7 @@ data class MangaGroupScreen(
                             screenModel.toggleRangeSelection(category, manga)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         },
-                        onRefresh = {},
+                        onRefresh = {false},
                         onGlobalSearchClicked = {},
                         getItemCountForCategory = { state.getItemCountForCategory(it) },
                         getDisplayMode = { screenModel.getDisplayMode() },
@@ -209,4 +213,5 @@ data class MangaGroupScreen(
             // No special handling needed for selection mode in group view
         }
     }
+
 }
