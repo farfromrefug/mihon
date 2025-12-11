@@ -90,7 +90,7 @@ data class MangaGroupScreen(
                     scrollBehavior = scrollBehavior,
                     // Add back button
                     navigationIcon = Icons.AutoMirrored.Outlined.ArrowBack,
-                    onClickNavigationIcon = { navigator.pop() },
+                    navigateUp = { navigator.pop() },
                 )
             },
             bottomBar = {
@@ -116,7 +116,7 @@ data class MangaGroupScreen(
                         // Set the first selected manga's cover as the group cover
                         val selectedManga = state.selectedManga.firstOrNull()
                         if (selectedManga != null) {
-                            screenModel.setGroupCover(groupId, selectedManga.manga.thumbnailUrl)
+                            screenModel.setGroupCover(groupId, selectedManga.thumbnailUrl)
                             screenModel.clearSelection()
                         }
                     }.takeIf { state.selection.isNotEmpty() },

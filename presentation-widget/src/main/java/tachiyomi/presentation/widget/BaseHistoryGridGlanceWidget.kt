@@ -108,7 +108,15 @@ abstract class BaseHistoryGridGlanceWidget(
             val widgetRowsChanges = remember {
                 preferenceStore.getInt("pref_widget_rows", 1).changes()
             }
+            val widgetCenterChanges = remember {
+                preferenceStore.getBoolean("pref_widget_center", false).changes()
+            }
+            val widgetPaddingChanges = remember {
+                preferenceStore.getFloat("pref_widget_padding", 10F).changes()
+            }
             val currentRows by widgetRowsChanges.collectAsState(initial = widgetRows)
+            val widgetCenter by widgetCenterChanges.collectAsState(initial = preferenceStore.getBoolean("pref_widget_center", false).get())
+            val widgetPadding by widgetPaddingChanges.collectAsState(initial = preferenceStore.getFloat("pref_widget_padding", 10F).get())
 
             val rawPref = preferenceStore.getString("pref_theme_mode_key", "SYSTEM").get()
             val isEInk = rawPref == "EINK" || (rawPref == "SYSTEM" && LocalEinkMode.current)
@@ -129,6 +137,8 @@ abstract class BaseHistoryGridGlanceWidget(
                 data = data,
                 grid = grid,
                 isEInk = isEInk,
+                padding = Dp(widgetPadding),
+                alignedCenter = widgetCenter,
                 contentColor = foreground,
                 modifier = containerModifier,
             )
