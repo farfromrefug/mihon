@@ -128,23 +128,23 @@ class ReaderActivity : BaseActivity() {
         private const val SHARPEN_SHADER = """
             uniform shader inputImage;
             uniform float scale;
-            
+
             half4 main(float2 coord) {
                 // Sample the center pixel
                 half4 center = inputImage.eval(coord);
-                
+
                 // Sample 4 neighboring pixels in cross pattern for edge detection
                 half4 top = inputImage.eval(coord + float2(0, -1));
                 half4 bottom = inputImage.eval(coord + float2(0, 1));
                 half4 left = inputImage.eval(coord + float2(-1, 0));
                 half4 right = inputImage.eval(coord + float2(1, 0));
-                
+
                 // Calculate the average of 4 neighbors (cross-pattern blur approximation)
                 half4 blur = (top + bottom + left + right) / 4.0;
-                
+
                 // Unsharp mask: output = original + scale * (original - blurred)
                 half4 sharpened = center + scale * (center - blur);
-                
+
                 // Clamp to valid color range and preserve alpha
                 return half4(clamp(sharpened.rgb, half3(0.0), half3(1.0)), center.a);
             }
@@ -371,6 +371,12 @@ class ReaderActivity : BaseActivity() {
                     onSave = viewModel::saveImage,
                 )
             }
+            is ReaderViewModel.Dialog.ChapterInfo -> {
+                eu.kanade.presentation.reader.ChapterInfoDialog(
+                    chapterInfo = (state.dialog as ReaderViewModel.Dialog.ChapterInfo).chapterInfo,
+                    onDismissRequest = onDismissRequest,
+                )
+            }
             null -> {}
         }
     }
@@ -511,6 +517,7 @@ class ReaderActivity : BaseActivity() {
             onOpenInWebView = ::openChapterInWebView.takeIf { isHttpSource },
             onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource },
             onShare = ::shareChapter.takeIf { isHttpSource },
+            onShowChapterInfo = viewModel::openChapterInfoDialog,
 
             viewer = state.viewer,
             onNextChapter = ::loadNextChapter,
@@ -858,7 +865,7 @@ class ReaderActivity : BaseActivity() {
             // Check if any effect is enabled
             val needsPaint = grayscale || invertedColors || (sharpenEnabled && sharpenScale > 0f && Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
             if (!needsPaint) return null
-            
+
             return Paint().apply {
                 colorFilter = ColorMatrixColorFilter(
                     ColorMatrix().apply {
@@ -941,10 +948,10 @@ class ReaderActivity : BaseActivity() {
                     // Update current sharpen state for API < 31
                     currentSharpenEnabled = state.sharpenEnabled
                     currentSharpenScale = state.sharpenScale
-                    
+
                     // Apply layer paint (includes sharpen for API < 31)
                     setLayerPaint(state.grayscale, state.invertedColors)
-                    
+
                     // For API 31+, apply RenderEffect-based sharpen
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         setSharpenEffect(state.sharpenEnabled, state.sharpenScale)
@@ -1038,7 +1045,7 @@ class ReaderActivity : BaseActivity() {
 
             viewModel.setBrightnessOverlayValue(value)
         }
-        
+
         private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
             val paint = getCombinedPaint(grayscale, invertedColors)
             binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)
@@ -1049,7 +1056,7 @@ class ReaderActivity : BaseActivity() {
          * - API 33+ (Android 13+): Uses RuntimeShader for true image sharpening via unsharp mask
          * - API 31-32 (Android 12-12L): Uses RenderEffect with contrast enhancement
          * - API < 31: Uses Paint ColorMatrix via setLayerType (handled by getCombinedPaint)
-         * 
+         *
          * @param enabled Whether the sharpen filter is enabled
          * @param scale The sharpen intensity (0.0 to 2.0, validated by preferences slider)
          */
@@ -1089,7 +1096,7 @@ class ReaderActivity : BaseActivity() {
             }
         }
     }
-    
+
     /**
      * Data class to hold color filter state for combining effects
      */

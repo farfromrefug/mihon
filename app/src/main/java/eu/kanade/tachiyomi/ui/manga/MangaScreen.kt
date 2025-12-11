@@ -192,6 +192,7 @@ class MangaScreen(
             onMarkPreviousAsReadClicked = screenModel::markPreviousChapterRead,
             onMultiDeleteClicked = screenModel::showDeleteChapterDialog,
             onSetChapterCoverAsMangaCover = screenModel::setChapterCoverAsMangaCover,
+            onShowChapterInfo = screenModel::showChapterInfoDialog,
             onChapterSwipe = screenModel::chapterSwipe,
             onChapterSelected = screenModel::toggleSelection,
             onAllChapterSelected = screenModel::toggleAllSelection,
@@ -311,6 +312,12 @@ class MangaScreen(
                 } else {
                     LoadingScreen(Modifier.systemBarsPadding())
                 }
+            }
+            is MangaScreenModel.Dialog.ChapterInfo -> {
+                eu.kanade.presentation.reader.ChapterInfoDialog(
+                    chapterInfo = dialog.chapterInfo,
+                    onDismissRequest = onDismissRequest,
+                )
             }
             is MangaScreenModel.Dialog.SetFetchInterval -> {
                 SetIntervalDialog(

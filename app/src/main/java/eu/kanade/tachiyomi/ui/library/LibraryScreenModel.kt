@@ -598,6 +598,9 @@ class LibraryScreenModel(
      */
     fun setMangaCategories(mangaList: List<Manga>, addCategories: List<Long>, removeCategories: List<Long>) {
         screenModelScope.launchNonCancellable {
+            val selection = state.value.selection
+            val groupIds = selection.filter { it < 0 }.map { -it }
+            
             mangaList.forEach { manga ->
                 val categoryIds = getCategories.await(manga.id)
                     .map { it.id }
@@ -606,6 +609,16 @@ class LibraryScreenModel(
                     .toList()
 
                 setMangaCategories.await(manga.id, categoryIds)
+            }
+            
+            // Also update group categories if groups were selected
+            groupIds.forEach { groupId ->
+                val currentGroupCategories = manageMangaInGroup.getGroupCategories(groupId)
+                val newCategories = currentGroupCategories
+                    .subtract(removeCategories.toSet())
+                    .plus(addCategories)
+                    .toList()
+                setMangaGroupCategories.await(groupId, newCategories)
             }
         }
     }
@@ -717,8 +730,30 @@ class LibraryScreenModel(
 
     fun openChangeCategoryDialog() {
         screenModelScope.launchIO {
-            // Create a copy of selected manga
-            val mangaList = state.value.selectedManga
+            val selection = state.value.selection
+            val libraryData = state.value.libraryData
+            
+            // Separate groups and manga from selection
+            val groupIds = selection.filter { it < 0 }.map { -it } // Groups have negative IDs
+            val mangaIds = selection.filter { it > 0 }
+            
+            // Get manga from groups
+            val mangaFromGroups = groupIds.flatMap { groupId ->
+                manageMangaInGroup.getMangaInGroup(groupId)
+            }
+            
+            // Get directly selected manga
+            val directlySelectedManga = mangaIds.mapNotNull { 
+                libraryData.favoritesById[it]?.libraryManga?.manga 
+            }
+            
+            // Combine all manga (removing duplicates)
+            val allMangaIds = (mangaFromGroups + mangaIds).distinct()
+            val mangaList = allMangaIds.mapNotNull { mangaId ->
+                libraryData.favoritesById[mangaId]?.libraryManga?.manga
+            }
+            
+            if (mangaList.isEmpty()) return@launchIO
 
             // Hide the default category because it has a different behavior than the ones from db.
             val categories = state.value.displayedCategories.filter { it.id != 0L }

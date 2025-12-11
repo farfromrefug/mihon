@@ -1258,6 +1258,7 @@ class MangaScreenModel(
         data class DuplicateManga(val manga: Manga, val duplicates: List<MangaWithChapterCount>) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
         data class SetFetchInterval(val manga: Manga) : Dialog
+        data class ChapterInfo(val chapterInfo: eu.kanade.presentation.reader.ChapterInfo) : Dialog
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
@@ -1286,6 +1287,45 @@ class MangaScreenModel(
     fun showMigrateDialog(duplicate: Manga) {
         val manga = successState?.manga ?: return
         updateSuccessState { it.copy(dialog = Dialog.Migrate(target = manga, current = duplicate)) }
+    }
+
+    fun showChapterInfoDialog(chapter: Chapter) {
+        val manga = successState?.manga ?: return
+        val source = successState?.source ?: return
+        
+        // Extract file info for local sources
+        val (fileName, filePath, fileSize) = if (source.isLocal()) {
+            extractLocalChapterInfo(chapter)
+        } else {
+            Triple(null, null, null)
+        }
+        
+        val chapterInfo = eu.kanade.presentation.reader.ChapterInfo(
+            chapterName = chapter.name,
+            chapterNumber = if (chapter.chapterNumber >= 0) chapter.chapterNumber.toString() else null,
+            scanlator = chapter.scanlator,
+            sourceName = source.name,
+            dateUpload = chapter.dateUpload,
+            fileName = fileName,
+            filePath = filePath,
+            fileSize = fileSize,
+        )
+        
+        updateSuccessState { it.copy(dialog = Dialog.ChapterInfo(chapterInfo)) }
+    }
+    
+    private fun extractLocalChapterInfo(chapter: Chapter): Triple<String?, String?, Long?> {
+        // Extract file name from URL
+        val fileName = chapter.url.substringAfterLast('/')
+        
+        // For local sources, the URL is the path
+        val filePath = chapter.url
+        
+        // File size - we would need to actually read the file to get the size
+        // For now, return null as we'd need to add proper file system access
+        val fileSize: Long? = null
+        
+        return Triple(fileName, filePath, fileSize)
     }
 
     fun setExcludedScanlators(excludedScanlators: Set<String>) {

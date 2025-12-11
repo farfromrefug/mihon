@@ -23,4 +23,8 @@ class ManageMangaInGroup(
     suspend fun getMangaInGroup(groupId: Long): List<Long> {
         return mangaGroupRepository.getMangaInGroup(groupId)
     }
+
+    suspend fun getGroupCategories(groupId: Long): List<Long> {
+        return mangaGroupRepository.getGroupCategories(groupId)
+    }
 }
