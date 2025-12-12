@@ -236,16 +236,27 @@ object SettingsDownloadScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_download_to_local_source),
                     subtitle = stringResource(MR.strings.pref_download_to_local_source_summary),
                 ),
-                Preference.PreferenceItem.EditTextPreference(
+                Preference.PreferenceItem.TemplateEditTextPreference(
                     preference = downloadPreferences.localSourceMangaFolderTemplate(),
                     title = stringResource(MR.strings.pref_local_source_manga_folder_template),
                     subtitle = stringResource(MR.strings.pref_local_source_manga_folder_template_summary),
+                    placeholders = listOf(
+                        DownloadPreferences.MANGA_TITLE_PLACEHOLDER,
+                    ),
                     enabled = downloadToLocalSource,
                 ),
-                Preference.PreferenceItem.EditTextPreference(
+                Preference.PreferenceItem.TemplateEditTextPreference(
                     preference = downloadPreferences.localSourceChapterFolderTemplate(),
                     title = stringResource(MR.strings.pref_local_source_chapter_folder_template),
                     subtitle = stringResource(MR.strings.pref_local_source_chapter_folder_template_summary),
+                    placeholders = listOf(
+                        DownloadPreferences.CHAPTER_NUMBER_PLACEHOLDER,
+                        DownloadPreferences.MANGA_TITLE_PLACEHOLDER,
+                        DownloadPreferences.CHAPTER_NAME_PLACEHOLDER,
+                        DownloadPreferences.CHAPTER_SCANLATOR_PLACEHOLDER,
+                        DownloadPreferences.PUBLISH_DATE_PLACEHOLDER,
+                        "[…]",  // Example of optional section syntax
+                    ),
                     enabled = downloadToLocalSource,
                 ),
 //                Preference.PreferenceItem.SwitchPreference(

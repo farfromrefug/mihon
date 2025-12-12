@@ -576,7 +576,8 @@
     <string name="pref_local_source_manga_folder_template">Manga folder name template</string>
     <string name="pref_local_source_manga_folder_template_summary">Template: {manga_title}</string>
     <string name="pref_local_source_chapter_folder_template">Chapter folder name template</string>
-    <string name="pref_local_source_chapter_folder_template_summary">Template: {chapter_name}, {chapter_number}, {scanlator}</string>
+    <string name="pref_local_source_chapter_folder_template_summary">Template: {chapter_name}, {chapter_number}, {manga_title}, {scanlator}, {publish_date}. Use [optional] for optional parts.</string>
+    <string name="template_insert">Insert template</string>
 
     <!-- Tracking section -->
     <string name="tracking_guide">Tracking guide</string>

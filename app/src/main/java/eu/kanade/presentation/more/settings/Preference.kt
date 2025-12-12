@@ -138,6 +138,20 @@ sealed class Preference {
         }
 
         /**
+         * A [PreferenceItem] that shows a EditText with template placeholder insertion buttons.
+         */
+        data class TemplateEditTextPreference(
+            val preference: PreferenceData<String>,
+            override val title: String,
+            override val subtitle: String? = "%s",
+            val placeholders: List<String> = emptyList(),
+            override val enabled: Boolean = true,
+            override val onValueChanged: suspend (value: String) -> Boolean = { true },
+        ) : PreferenceItem<String, Boolean>() {
+            override val icon: ImageVector? = null
+        }
+
+        /**
          * A [PreferenceItem] for individual tracker.
          */
         data class TrackerPreference(

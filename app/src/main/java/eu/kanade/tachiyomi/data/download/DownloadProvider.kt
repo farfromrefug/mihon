@@ -267,6 +267,7 @@ class DownloadProvider(
      * @param chapterScanlator scanlator of the chapter to query.
      * @param mangaTitle the title of the manga.
      * @param chapterUrl url of the chapter to query.
+     * @param dateUpload upload date of the chapter (epoch milliseconds).
      */
     fun getLocalSourceChapterDirName(
         chapterName: String,
@@ -274,22 +275,58 @@ class DownloadProvider(
         chapterScanlator: String?,
         mangaTitle: String,
         chapterUrl: String,
+        dateUpload: Long = -1,
     ): String {
         val template = downloadPreferences.localSourceChapterFolderTemplate().get()
         val sanitizedChapterName = sanitizeChapterName(chapterName)
 
-        // Format chapter number (remove trailing zeros)
-        val chapterNumberStr = if (chapterNumber == chapterNumber) {
-            chapterNumber.toLong().toString()
+        // Format chapter number (remove trailing zeros), treat -1 as empty
+        val chapterNumberStr = if (chapterNumber >= 0) {
+            if (chapterNumber == chapterNumber.toLong().toDouble()) {
+                chapterNumber.toLong().toString()
+            } else {
+                chapterNumber.toString()
+            }
         } else {
-            chapterNumber.toString()
+            ""
         }
 
-        var dirName = template
+        // Format publish date (extract year if available)
+        val publishDateStr = if (dateUpload > 0) {
+            val year = java.time.Instant.ofEpochMilli(dateUpload)
+                .atZone(java.time.ZoneId.systemDefault())
+                .year
+            year.toString()
+        } else {
+            ""
+        }
+
+        // Process optional sections - syntax: [content]
+        // Optional sections are included only if all placeholders within have values
+        // Note: Nested brackets are not supported; use only one level of brackets
+        var processedTemplate = template
+        val optionalRegex = """\[([^\[\]]+)\]""".toRegex()
+        processedTemplate = optionalRegex.replace(processedTemplate) { matchResult ->
+            val content = matchResult.groupValues[1]
+            // Check if any placeholder in the optional section would be empty
+            val hasEmptyPlaceholder = when {
+                content.contains(DownloadPreferences.CHAPTER_NUMBER_PLACEHOLDER) && chapterNumberStr.isEmpty() -> true
+                content.contains(DownloadPreferences.CHAPTER_SCANLATOR_PLACEHOLDER) && chapterScanlator.isNullOrBlank() -> true
+                content.contains(DownloadPreferences.PUBLISH_DATE_PLACEHOLDER) && publishDateStr.isEmpty() -> true
+                content.contains(DownloadPreferences.CHAPTER_NAME_PLACEHOLDER) && sanitizedChapterName.isBlank() -> true
+                content.contains(DownloadPreferences.MANGA_TITLE_PLACEHOLDER) && mangaTitle.isBlank() -> true
+                else -> false
+            }
+            // Include the content only if no placeholders are empty
+            if (hasEmptyPlaceholder) "" else content
+        }
+
+        var dirName = processedTemplate
             .replace(DownloadPreferences.CHAPTER_NAME_PLACEHOLDER, sanitizedChapterName)
             .replace(DownloadPreferences.CHAPTER_NUMBER_PLACEHOLDER, chapterNumberStr)
             .replace(DownloadPreferences.CHAPTER_SCANLATOR_PLACEHOLDER, chapterScanlator ?: "")
             .replace(DownloadPreferences.MANGA_TITLE_PLACEHOLDER, mangaTitle)
+            .replace(DownloadPreferences.PUBLISH_DATE_PLACEHOLDER, publishDateStr)
             .trim()
 
         // If template result is empty, fall back to chapter name

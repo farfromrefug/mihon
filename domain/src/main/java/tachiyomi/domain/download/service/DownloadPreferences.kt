@@ -61,9 +61,10 @@ class DownloadPreferences(
         const val CHAPTER_NAME_PLACEHOLDER = "{chapter_name}"
         const val CHAPTER_NUMBER_PLACEHOLDER = "{chapter_number}"
         const val CHAPTER_SCANLATOR_PLACEHOLDER = "{scanlator}"
+        const val PUBLISH_DATE_PLACEHOLDER = "{publish_date}"
 
         const val DEFAULT_MANGA_FOLDER_TEMPLATE = MANGA_TITLE_PLACEHOLDER
-        const val DEFAULT_CHAPTER_FOLDER_TEMPLATE = CHAPTER_NAME_PLACEHOLDER
+        const val DEFAULT_CHAPTER_FOLDER_TEMPLATE = "[#{chapter_number} - ]{manga_title} - {chapter_name}"
         private const val REMOVE_EXCLUDE_CATEGORIES_PREF_KEY = "remove_exclude_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_PREF_KEY = "download_new_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_EXCLUDE_PREF_KEY = "download_new_categories_exclude"

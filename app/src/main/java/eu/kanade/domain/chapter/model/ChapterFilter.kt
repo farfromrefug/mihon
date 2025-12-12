@@ -29,6 +29,8 @@ fun List<Chapter>.applyFilters(manga: Manga, downloadManager: DownloadManager): 
                     chapter.url,
                     manga.title,
                     manga.source,
+                    chapterNumber = chapter.chapterNumber,
+                    dateUpload = chapter.dateUpload,
                 )
                 downloaded || isLocalManga
             }

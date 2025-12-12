@@ -362,6 +362,7 @@ class Downloader(
                 download.chapter.scanlator,
                 download.manga.title,
                 download.chapter.url,
+                download.chapter.dateUpload,
             )
         } else {
             provider.getChapterDirName(

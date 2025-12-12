@@ -23,6 +23,7 @@ import eu.kanade.presentation.more.settings.widget.MultiSelectListPreferenceWidg
 import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
 import eu.kanade.presentation.more.settings.widget.PrefsVerticalPadding
 import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
+import eu.kanade.presentation.more.settings.widget.TemplateEditTextPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TitleFontSize
 import eu.kanade.presentation.more.settings.widget.TrackingPreferenceWidget
@@ -157,6 +158,21 @@ internal fun PreferenceItem(
                     subtitle = item.subtitle,
                     icon = item.icon,
                     value = values,
+                    onConfirm = {
+                        val accepted = item.onValueChanged(it)
+                        if (accepted) item.preference.set(it)
+                        accepted
+                    },
+                )
+            }
+            is Preference.PreferenceItem.TemplateEditTextPreference -> {
+                val values by item.preference.collectAsState()
+                TemplateEditTextPreferenceWidget(
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    icon = item.icon,
+                    value = values,
+                    placeholders = item.placeholders,
                     onConfirm = {
                         val accepted = item.onValueChanged(it)
                         if (accepted) item.preference.set(it)

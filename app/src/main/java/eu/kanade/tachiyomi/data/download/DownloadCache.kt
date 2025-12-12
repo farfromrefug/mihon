@@ -143,6 +143,8 @@ class DownloadCache(
         mangaTitle: String,
         sourceId: Long,
         skipCache: Boolean,
+        chapterNumber: Double = -1.0,
+        dateUpload: Long = -1,
     ): Boolean {
         if (skipCache) {
             val source = sourceManager.getOrStub(sourceId)
@@ -179,6 +181,23 @@ class DownloadCache(
                         dirName.endsWith(chapterHash) || dirName.endsWith("$chapterHash.cbz")
                     }
                     if (hasMatchingChapter) return true
+
+                    // Also try building the expected chapter dir name using the template
+                    // This provides a more accurate check when chapter metadata is available
+                    if (chapterNumber >= 0 || dateUpload > 0) {
+                        val expectedDirName = provider.getLocalSourceChapterDirName(
+                            chapterName,
+                            chapterNumber,
+                            chapterScanlator,
+                            mangaTitle,
+                            chapterUrl,
+                            dateUpload,
+                        )
+                        val cbzName = "$expectedDirName.cbz"
+                        if (expectedDirName in localMangaDir.chapterDirs || cbzName in localMangaDir.chapterDirs) {
+                            return true
+                        }
+                    }
                 }
             }
         }
