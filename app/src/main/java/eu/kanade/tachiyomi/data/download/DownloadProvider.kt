@@ -318,7 +318,6 @@ class DownloadProvider(
             .replace(DownloadPreferences.CHAPTER_NAME_PLACEHOLDER, sanitizedChapterName)
             .replace(DownloadPreferences.CHAPTER_NUMBER_PLACEHOLDER, chapterNumberStr)
             .replace(DownloadPreferences.CHAPTER_SCANLATOR_PLACEHOLDER, chapterScanlator ?: "")
-            .replace(DownloadPreferences.MANGA_TITLE_CHAPTER_PLACEHOLDER, mangaTitle)
             .replace(DownloadPreferences.MANGA_TITLE_PLACEHOLDER, mangaTitle)
             .replace(DownloadPreferences.PUBLISH_DATE_PLACEHOLDER, publishDateStr)
             .trim()
