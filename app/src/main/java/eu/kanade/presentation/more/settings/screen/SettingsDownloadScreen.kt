@@ -255,7 +255,7 @@ object SettingsDownloadScreen : SearchableSettings {
                         DownloadPreferences.CHAPTER_NAME_PLACEHOLDER,
                         DownloadPreferences.CHAPTER_SCANLATOR_PLACEHOLDER,
                         DownloadPreferences.PUBLISH_DATE_PLACEHOLDER,
-                        "[optional]",
+                        "[…]",  // Example of optional section syntax
                     ),
                     enabled = downloadToLocalSource,
                 ),

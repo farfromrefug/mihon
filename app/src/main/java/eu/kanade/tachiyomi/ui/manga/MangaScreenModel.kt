@@ -618,6 +618,8 @@ class MangaScreenModel(
                     chapter.url,
                     manga.title,
                     manga.source,
+                    chapterNumber = chapter.chapterNumber,
+                    dateUpload = chapter.dateUpload,
                 )
             }
             val downloadState = when {
