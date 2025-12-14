@@ -424,6 +424,8 @@ class DownloadProvider(
         return buildList {
             // Folder of images
             add(chapterDirName)
+            // Local cbz
+            add(chapterUrl.split("/").last())
             // Archived chapters
             add("$chapterDirName.cbz")
 
