@@ -11,6 +11,9 @@ CREATE TABLE mangas(
     author TEXT,
     description TEXT,
     genre TEXT AS List<String>,
+    tags TEXT AS List<String>,
+    moods TEXT AS List<String>,
+    language TEXT,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
     thumbnail_url TEXT,
@@ -182,8 +185,8 @@ AND (
 );
 
 insert:
-INSERT INTO mangas(source, url, artist, author, description, genre, title, status, thumbnail_url, favorite, last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added, update_strategy, calculate_interval, last_modified_at, version, notes)
-VALUES (:source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite, :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded, :updateStrategy, :calculateInterval, 0, :version, :notes);
+INSERT INTO mangas(source, url, artist, author, description, genre, tags, moods, language, title, status, thumbnail_url, favorite, last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added, update_strategy, calculate_interval, last_modified_at, version, notes)
+VALUES (:source, :url, :artist, :author, :description, :genre, :tags, :moods, :language, :title, :status, :thumbnailUrl, :favorite, :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded, :updateStrategy, :calculateInterval, 0, :version, :notes);
 
 update:
 UPDATE mangas SET
@@ -193,6 +196,9 @@ UPDATE mangas SET
     author = coalesce(:author, author),
     description = coalesce(:description, description),
     genre = coalesce(:genre, genre),
+    tags = coalesce(:tags, tags),
+    moods = coalesce(:moods, moods),
+    language = coalesce(:language, language),
     title = coalesce(:title, title),
     status = coalesce(:status, status),
     thumbnail_url = coalesce(:thumbnailUrl, thumbnail_url),
@@ -217,12 +223,12 @@ SELECT last_insert_rowid();
 insertNetworkManga {
     -- Insert the manga if it doesn't exist already
     INSERT INTO mangas(
-        source, url, artist, author, description, genre, title, status, thumbnail_url, favorite,
+        source, url, artist, author, description, genre, tags, moods, language, title, status, thumbnail_url, favorite,
         last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added,
         update_strategy, calculate_interval, last_modified_at, version
     )
     SELECT
-        :source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite,
+        :source, :url, :artist, :author, :description, :genre, :tags, :moods, :language, :title, :status, :thumbnailUrl, :favorite,
         :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded,
         :updateStrategy, :calculateInterval, 0, :version
     WHERE NOT EXISTS(SELECT 0 FROM mangas WHERE source = :source AND url = :url);
@@ -236,6 +242,9 @@ insertNetworkManga {
         artist = CASE WHEN :updateDetails THEN :artist ELSE artist END,
         description = CASE WHEN :updateDetails THEN :description ELSE description END,
         genre = CASE WHEN :updateDetails THEN :genre ELSE genre END,
+        tags = CASE WHEN :updateDetails THEN :tags ELSE tags END,
+        moods = CASE WHEN :updateDetails THEN :moods ELSE moods END,
+        language = CASE WHEN :updateDetails THEN :language ELSE language END,
         status = CASE WHEN :updateDetails THEN :status ELSE status END,
         update_strategy = CASE WHEN :updateDetails THEN :updateStrategy ELSE update_strategy END,
         initialized = :updateDetails

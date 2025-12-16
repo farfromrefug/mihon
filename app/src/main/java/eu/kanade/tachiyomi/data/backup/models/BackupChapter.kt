@@ -23,6 +23,11 @@ data class BackupChapter(
     @ProtoNumber(11) var lastModifiedAt: Long = 0,
     @ProtoNumber(12) var version: Long = 0,
     @ProtoNumber(13) var totalPages: Long = 0,
+    @ProtoNumber(14) var genre: List<String> = emptyList(),
+    @ProtoNumber(15) var moods: List<String> = emptyList(),
+    @ProtoNumber(16) var tags: List<String> = emptyList(),
+    @ProtoNumber(17) var language: String? = null,
+    @ProtoNumber(18) var description: String? = null,
 ) {
     fun toChapterImpl(): Chapter {
         return Chapter.create().copy(
@@ -39,6 +44,11 @@ data class BackupChapter(
             lastModifiedAt = this@BackupChapter.lastModifiedAt,
             version = this@BackupChapter.version,
             totalPages = this@BackupChapter.totalPages,
+            genre = this@BackupChapter.genre,
+            tags = this@BackupChapter.tags,
+            moods = this@BackupChapter.moods,
+            language = this@BackupChapter.language,
+            description = this@BackupChapter.description,
         )
     }
 }
@@ -61,6 +71,11 @@ val backupChapterMapper = {
         _: Long,
         _: String?,
         totalPages: Long,
+        genre: List<String>?,
+        moods: List<String>?,
+        tags: List<String>?,
+        language: String?,
+        description: String?,
     ->
     BackupChapter(
         url = url,
@@ -76,5 +91,10 @@ val backupChapterMapper = {
         lastModifiedAt = lastModifiedAt,
         version = version,
         totalPages = totalPages,
+        genre = genre ?: emptyList(),
+        moods = moods ?: emptyList(),
+        tags = tags ?: emptyList(),
+        language = language,
+        description = description,
     )
 }

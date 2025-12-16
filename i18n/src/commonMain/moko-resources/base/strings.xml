@@ -861,6 +861,7 @@
     <string name="unfinished_list">Unfinished List</string>
     <string name="score">Score</string>
     <string name="title">Title</string>
+    <string name="description">Description</string>
     <string name="status">Status</string>
     <string name="track_status">Status</string>
     <string name="track_started_reading_date">Start date</string>
@@ -1104,7 +1105,6 @@
     <string name="migrationListScreen.searchManuallyActionLabel">Search manually</string>
     <string name="migrationListScreen.skipActionLabel">Don\'t migrate</string>
     <string name="migrationListScreen.migrateNowActionLabel">Migrate now</string>
-    <string name="migrationListScreen.copyNowActionLabel">Copy now</string>
     <string name="migrationListScreen.copyNowActionLabel">Copy now</string>
     <string name="migrationListScreen.exitDialogTitle">Stop migrating?</string>
     <string name="migrationListScreen.exitDialog.stopLabel">Stop</string>

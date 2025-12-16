@@ -63,6 +63,7 @@ fun ChapterCompactGridItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDownloadClick: ((ChapterDownloadAction) -> Unit)?,
+    onInfoClick: ((InfoAction) -> Unit)?,
     modifier: Modifier = Modifier,
     date: String? = null,
     readProgress: Double = 0.0,
@@ -115,18 +116,24 @@ fun ChapterCompactGridItem(
                     }
                 }
             },
-            badgesEnd = if (downloadIndicatorEnabled) {
-                {
-                    ChapterDownloadIndicator(
+            badgesEnd = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    if (downloadIndicatorEnabled) {
+                        ChapterDownloadIndicator(
+                            enabled = true,
+                            downloadStateProvider = downloadStateProvider,
+                            downloadProgressProvider = downloadProgressProvider,
+                            onClick = { onDownloadClick?.invoke(it) },
+                        )
+                    }
+                    InfoIndicator(
                         enabled = true,
-                        modifier = Modifier.padding(4.dp),
-                        downloadStateProvider = downloadStateProvider,
-                        downloadProgressProvider = downloadProgressProvider,
-                        onClick = { onDownloadClick?.invoke(it) },
+                        onClick = { onInfoClick?.invoke(it) },
                     )
                 }
-            } else {
-                null
             },
             readProgress = readProgress,
         )
@@ -151,6 +158,7 @@ fun ChapterComfortableGridItem(
     onLongClick: () -> Unit,
     onDownloadClick: ((ChapterDownloadAction) -> Unit)?,
     modifier: Modifier = Modifier,
+    onInfoClick: ((InfoAction) -> Unit)?,
     date: String? = null,
     readProgress: Double = 0.0,
 ) {
@@ -194,19 +202,26 @@ fun ChapterComfortableGridItem(
                         }
                     }
                 },
-                badgesEnd = if (downloadIndicatorEnabled) {
-                    {
-                        ChapterDownloadIndicator(
+                badgesEnd = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        if (downloadIndicatorEnabled) {
+                            ChapterDownloadIndicator(
+                                enabled = true,
+                                downloadStateProvider = downloadStateProvider,
+                                downloadProgressProvider = downloadProgressProvider,
+                                onClick = { onDownloadClick?.invoke(it) },
+                            )
+                        }
+                        InfoIndicator(
                             enabled = true,
-                            modifier = Modifier.padding(4.dp),
-                            downloadStateProvider = downloadStateProvider,
-                            downloadProgressProvider = downloadProgressProvider,
-                            onClick = { onDownloadClick?.invoke(it) },
+                            onClick = { onInfoClick?.invoke(it) },
                         )
                     }
-                } else {
-                    null
                 },
+                readProgress = readProgress
             )
             ChapterGridItemTitle(
                 title = title,

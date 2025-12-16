@@ -22,6 +22,7 @@ import java.util.Date
 
 data class ChapterInfo(
     val chapterName: String,
+    val chapterDescription: String?,
     val chapterNumber: String?,
     val scanlator: String?,
     val sourceName: String,
@@ -53,6 +54,12 @@ fun ChapterInfoDialog(
                     label = stringResource(MR.strings.title),
                     value = chapterInfo.chapterName,
                 )
+                if (chapterInfo.chapterDescription != null && chapterInfo.chapterDescription.length > 0) {
+                    InfoRow(
+                        label = stringResource(MR.strings.description),
+                        value = chapterInfo.chapterDescription,
+                    )
+                }
 
                 // Chapter number
                 chapterInfo.chapterNumber?.let {

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -79,6 +78,7 @@ fun PagedChapterList(
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
+    onShowChapterInfo: ((Chapter) -> Unit)?,
 ) {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
@@ -208,7 +208,7 @@ fun PagedChapterList(
                     },
                     onChapterSwipe = {
                         onChapterSwipe(item, it)
-                    },
+                    }
                 )
             }
         }
@@ -242,6 +242,7 @@ fun PagedChapterGrid(
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
+    onShowChapterInfo: ((Chapter) -> Unit)?,
 ) {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
@@ -385,6 +386,7 @@ fun PagedChapterGrid(
                             } else {
                                 null
                             },
+                            onInfoClick = { onShowChapterInfo?.invoke(item.chapter) }
                         )
                     }
                     ChapterDisplayMode.ComfortableGrid -> {
@@ -414,6 +416,7 @@ fun PagedChapterGrid(
                             } else {
                                 null
                             },
+                            onInfoClick = { onShowChapterInfo?.invoke(item.chapter) }
                         )
                     }
                     else -> {}

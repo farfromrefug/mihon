@@ -619,7 +619,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val chapterId = readerChapter.chapter.id!!
         val endTime = Date()
         val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
-        
+
         val totalPage = (readerChapter.pages?.size ?: 0).toLong()
         val currentPage = ((readerChapter.chapter.last_page_read + 1).toLong()).coerceIn(0, totalPage)
 
@@ -814,16 +814,17 @@ class ReaderViewModel @JvmOverloads constructor(
         val domainChapter = dbChapter.toDomainChapter() ?: return
         val manga = state.value.manga ?: return
         val source = sourceManager.getOrStub(manga.source)
-        
+
         // Extract file info for local sources
         val (fileName, filePath, fileSize) = if (source.isLocal()) {
             extractLocalChapterInfo(domainChapter)
         } else {
             Triple(null, null, null)
         }
-        
+
         val chapterInfo = eu.kanade.presentation.reader.ChapterInfo(
             chapterName = domainChapter.name,
+            chapterDescription = domainChapter.description,
             chapterNumber = if (domainChapter.chapterNumber >= 0) domainChapter.chapterNumber.toString() else null,
             scanlator = domainChapter.scanlator,
             sourceName = source.name,
@@ -832,21 +833,21 @@ class ReaderViewModel @JvmOverloads constructor(
             filePath = filePath,
             fileSize = fileSize,
         )
-        
+
         mutableState.update { it.copy(dialog = Dialog.ChapterInfo(chapterInfo)) }
     }
-    
+
     private fun extractLocalChapterInfo(chapter: tachiyomi.domain.chapter.model.Chapter): Triple<String?, String?, Long?> {
         // Extract file name from URL
         val fileName = chapter.url.substringAfterLast('/')
-        
+
         // For local sources, the URL is the path
         val filePath = chapter.url
-        
+
         // File size - we would need to actually read the file to get the size
         // For now, return null as we'd need to add proper file system access
         val fileSize: Long? = null
-        
+
         return Triple(fileName, filePath, fileSize)
     }
 

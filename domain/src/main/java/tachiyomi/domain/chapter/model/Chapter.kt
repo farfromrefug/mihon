@@ -10,6 +10,7 @@ data class Chapter(
     val sourceOrder: Long,
     val url: String,
     val name: String,
+    val description: String?,
     val dateUpload: Long,
     val chapterNumber: Double,
     val scanlator: String?,
@@ -17,6 +18,10 @@ data class Chapter(
     val version: Long,
     val coverUrl: String? = null,
     val totalPages: Long = 0,
+    val language: String?,
+    val genre: List<String>?,
+    val tags: List<String>?,
+    val moods: List<String>?,
 ) {
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0f
@@ -24,6 +29,11 @@ data class Chapter(
     fun copyFrom(other: Chapter): Chapter {
         return copy(
             name = other.name,
+            description = other.description,
+            genre = other.genre,
+            tags = other.tags,
+            moods = other.moods,
+            language = other.language,
             url = other.url,
             dateUpload = other.dateUpload,
             chapterNumber = other.chapterNumber,
@@ -43,12 +53,17 @@ data class Chapter(
             sourceOrder = 0,
             url = "",
             name = "",
+            description = "",
             dateUpload = -1,
             chapterNumber = -1.0,
             scanlator = null,
             lastModifiedAt = 0,
             version = 1,
             coverUrl = null,
+            language = null,
+            genre = null,
+            tags = null,
+            moods = null,
             totalPages = 0,
         )
     }

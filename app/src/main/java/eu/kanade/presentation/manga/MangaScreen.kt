@@ -525,6 +525,7 @@ private fun MangaScreenSmallImpl(
                                     onDownloadChapter = onDownloadChapter,
                                     onChapterSelected = onChapterSelected,
                                     onChapterSwipe = onChapterSwipe,
+                                    onShowChapterInfo = onShowChapterInfo,
                                 )
                             }
                             ChapterDisplayMode.CompactGrid, ChapterDisplayMode.ComfortableGrid -> {
@@ -542,7 +543,8 @@ private fun MangaScreenSmallImpl(
                                     onChapterClicked = onChapterClicked,
                                     onDownloadChapter = onDownloadChapter,
                                     onChapterSelected = onChapterSelected,
-                                )
+                                    onShowChapterInfo = onShowChapterInfo,
+                                    )
                             }
                         }
                     }
@@ -650,6 +652,7 @@ private fun MangaScreenSmallImpl(
                                     onChapterClicked = onChapterClicked,
                                     onDownloadChapter = onDownloadChapter,
                                     onChapterSelected = onChapterSelected,
+                                    onShowChapterInfo = onShowChapterInfo,
                                 )
                             }
                         }
@@ -1137,6 +1140,7 @@ private fun MangaScreenCompactImpl(
                                     onDownloadChapter = onDownloadChapter,
                                     onChapterSelected = onChapterSelected,
                                     onChapterSwipe = onChapterSwipe,
+                                    onShowChapterInfo = onShowChapterInfo,
                                 )
                             }
                             ChapterDisplayMode.CompactGrid, ChapterDisplayMode.ComfortableGrid -> {
@@ -1150,6 +1154,7 @@ private fun MangaScreenCompactImpl(
                                     onChapterClicked = onChapterClicked,
                                     onDownloadChapter = onDownloadChapter,
                                     onChapterSelected = onChapterSelected,
+                                    onShowChapterInfo = onShowChapterInfo,
                                 )
                             }
                         }
@@ -1415,6 +1420,7 @@ private fun LazyListScope.sharedChapterGridItems(
     onChapterClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
+    onShowChapterInfo: ((Chapter) -> Unit)? = null,
 ) {
     // Filter only chapter items (skip MissingCount for grid view)
     val chapterItems = chapters.filterIsInstance<ChapterList.Item>()
@@ -1496,6 +1502,7 @@ private fun LazyListScope.sharedChapterGridItems(
                                 },
                                 date = relativeDateText(item.chapter.dateUpload),
                                 readProgress = readProgress,
+                                onInfoClick = { onShowChapterInfo?.invoke(item.chapter) }
                             )
                         }
                         ChapterDisplayMode.ComfortableGrid -> {
@@ -1528,6 +1535,7 @@ private fun LazyListScope.sharedChapterGridItems(
                                 },
                                 date = relativeDateText(item.chapter.dateUpload),
                                 readProgress = readProgress,
+                                onInfoClick = { onShowChapterInfo?.invoke(item.chapter) }
                             )
                         }
                         // List mode is handled by sharedChapterItems, this branch should not be reached

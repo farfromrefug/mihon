@@ -16,13 +16,30 @@ interface SChapter : Serializable {
 
     var scanlator: String?
 
-    /**
-     * Thumbnail URL of the chapter cover image.
-     * This is optional and can be used to display a per-chapter cover.
-     *
-     * @since extensions-lib 1.6
-     */
+    var description: String?
+
+    var genre: String?
+
+    var tags: String?
+
+    var moods: String?
+
+    var language: String?
+
     var thumbnail_url: String?
+
+    fun getGenres(): List<String>? {
+        if (genre.isNullOrBlank()) return null
+        return genre?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
+    fun getTags(): List<String>? {
+        if (tags.isNullOrBlank()) return null
+        return tags?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
+    fun getMoods(): List<String>? {
+        if (moods.isNullOrBlank()) return null
+        return moods?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
 
     fun copyFrom(other: SChapter) {
         name = other.name
@@ -31,6 +48,12 @@ interface SChapter : Serializable {
         chapter_number = other.chapter_number
         scanlator = other.scanlator
         thumbnail_url = other.thumbnail_url
+        genre = other.genre
+        tags = other.tags
+        moods = other.moods
+        language = other.language
+        description = other.description
+
     }
 
     companion object {

@@ -51,7 +51,7 @@ class GetApplicationRelease(
         // Removes prefixes like "r" or "v"
         val newVersion = versionTag.replace("[^\\d.]".toRegex(), "")
         return if (isPreview) {
-            // Preview builds: based on releases in "mihonapp/mihon-preview" repo
+            // Preview builds: based on releases in "farfromrefug/koma-preview" repo
             // tagged as something like "r1234"
             newVersion.toInt() > commitCount
         } else {

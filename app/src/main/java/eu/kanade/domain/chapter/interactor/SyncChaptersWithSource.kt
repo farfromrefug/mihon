@@ -125,6 +125,11 @@ class SyncChaptersWithSource(
 
                     var toChangeChapter = dbChapter.copy(
                         name = chapter.name,
+                        description = chapter.description,
+                        language = chapter.language,
+                        tags = chapter.tags,
+                        genre = chapter.genre,
+                        moods = chapter.moods,
                         chapterNumber = chapter.chapterNumber,
                         scanlator = chapter.scanlator,
                         sourceOrder = chapter.sourceOrder,

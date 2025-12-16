@@ -29,6 +29,10 @@ data class BackupManga(
     @ProtoNumber(16) var chapters: List<BackupChapter> = emptyList(),
     @ProtoNumber(17) var categories: List<Long> = emptyList(),
     @ProtoNumber(18) var tracking: List<BackupTracking> = emptyList(),
+    @ProtoNumber(19) var moods: List<String> = emptyList(),
+    @ProtoNumber(20) var tags: List<String> = emptyList(),
+    @ProtoNumber(21) var language: String? = null,
+
     // Bump by 100 for values that are not saved/implemented in 1.x but are used in 0.x
     @ProtoNumber(100) var favorite: Boolean = true,
     @ProtoNumber(101) var chapterFlags: Int = 0,
@@ -51,7 +55,10 @@ data class BackupManga(
             artist = this@BackupManga.artist,
             author = this@BackupManga.author,
             description = this@BackupManga.description,
+            language = this@BackupManga.language,
             genre = this@BackupManga.genre,
+            moods = this@BackupManga.moods,
+            tags = this@BackupManga.tags,
             status = this@BackupManga.status.toLong(),
             thumbnailUrl = this@BackupManga.thumbnailUrl,
             favorite = this@BackupManga.favorite,

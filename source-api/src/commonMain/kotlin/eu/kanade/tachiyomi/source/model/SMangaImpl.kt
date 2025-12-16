@@ -16,6 +16,12 @@ class SMangaImpl : SManga {
 
     override var genre: String? = null
 
+    override var tags: String? = null
+
+    override var moods: String? = null
+
+    override var language: String? = null
+
     override var status: Int = 0
 
     override var thumbnail_url: String? = null

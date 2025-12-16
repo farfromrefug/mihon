@@ -42,6 +42,9 @@ fun Manga.toSManga(): SManga = SManga.create().also {
     it.author = author
     it.description = description
     it.genre = genre.orEmpty().joinToString()
+    it.tags = tags.orEmpty().joinToString()
+    it.moods = moods.orEmpty().joinToString()
+    it.language = language
     it.status = status.toInt()
     it.thumbnail_url = thumbnailUrl
     it.initialized = initialized
@@ -56,12 +59,25 @@ fun Manga.copyFrom(other: SManga): Manga {
     } else {
         genre
     }
+    val tags = if (other.tags != null) {
+        other.getTags()
+    } else {
+        tags
+    }
+    val moods = if (other.moods != null) {
+        other.getMoods()
+    } else {
+        moods
+    }
     val thumbnailUrl = other.thumbnail_url ?: thumbnailUrl
     return this.copy(
         author = author,
         artist = artist,
         description = description,
         genre = genres,
+        tags = tags,
+        moods = moods,
+        language = language,
         thumbnailUrl = thumbnailUrl,
         status = other.status.toLong(),
         updateStrategy = other.update_strategy,
@@ -98,6 +114,7 @@ fun getComicInfo(
     penciller = manga.artist?.let { ComicInfo.Penciller(it) },
     translator = chapter.scanlator?.let { ComicInfo.Translator(it) },
     genre = manga.genre?.let { ComicInfo.Genre(it.joinToString()) },
+    tags = manga.tags?.let { ComicInfo.Tags(it.joinToString()) },
     publishingStatus = ComicInfo.PublishingStatusTachiyomi(
         ComicInfoPublishingStatus.toComicInfoValue(manga.status),
     ),
@@ -107,5 +124,4 @@ fun getComicInfo(
     colorist = null,
     letterer = null,
     coverArtist = null,
-    tags = null,
 )

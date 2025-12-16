@@ -42,9 +42,9 @@ class AppUpdateChecker {
 
 val GITHUB_REPO: String by lazy {
     if (isPreviewBuildType) {
-        "mihonapp/mihon-preview"
+        "farfromrefug/koma-preview"
     } else {
-        "mihonapp/mihon"
+        "farfromrefug/koma"
     }
 }
 

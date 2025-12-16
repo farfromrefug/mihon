@@ -117,6 +117,9 @@ class MangaRestorer(
                 author = manga.author,
                 description = manga.description,
                 genre = manga.genre?.joinToString(separator = ", "),
+                tags = manga.tags?.joinToString(separator = ", "),
+                moods = manga.moods?.joinToString(separator = ", "),
+                language = manga.language,
                 title = manga.title,
                 status = manga.status,
                 thumbnailUrl = manga.thumbnailUrl,
@@ -210,6 +213,11 @@ class MangaRestorer(
                     chapter.version,
                     chapter.coverUrl,
                     chapter.totalPages,
+                    chapter.genre,
+                    chapter.tags,
+                    chapter.moods,
+                    chapter.language,
+                    chapter.description,
                 )
             }
         }
@@ -235,6 +243,11 @@ class MangaRestorer(
                     isSyncing = 0,
                     coverUrl = chapter.coverUrl,
                     totalPages = chapter.totalPages,
+                    tags = chapter.tags?.joinToString(separator = ", "),
+                    genre = chapter.genre?.joinToString(separator = ", "),
+                    moods = chapter.moods?.joinToString(separator = ", "),
+                    description = chapter.description,
+                    language = chapter.language,
                 )
             }
         }
@@ -254,6 +267,9 @@ class MangaRestorer(
                 author = manga.author,
                 description = manga.description,
                 genre = manga.genre,
+                tags = manga.tags,
+                moods = manga.moods,
+                language = manga.language,
                 title = manga.title,
                 status = manga.status,
                 thumbnailUrl = manga.thumbnailUrl,

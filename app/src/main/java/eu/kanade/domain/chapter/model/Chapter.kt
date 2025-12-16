@@ -14,10 +14,31 @@ fun Chapter.toSChapter(): SChapter {
         it.chapter_number = chapterNumber.toFloat()
         it.scanlator = scanlator
         it.thumbnail_url = coverUrl
+        it.description = description
+        it.genre = genre.orEmpty().joinToString()
+        it.tags = tags.orEmpty().joinToString()
+        it.moods = moods.orEmpty().joinToString()
+        it.language = language
     }
 }
 
 fun Chapter.copyFromSChapter(sChapter: SChapter): Chapter {
+    val description = sChapter.description ?: description
+    val genres = if (sChapter.genre != null) {
+        sChapter.getGenres()
+    } else {
+        genre
+    }
+    val tags = if (sChapter.tags != null) {
+        sChapter.getTags()
+    } else {
+        tags
+    }
+    val moods = if (sChapter.moods != null) {
+        sChapter.getMoods()
+    } else {
+        moods
+    }
     return this.copy(
         name = sChapter.name,
         url = sChapter.url,
@@ -25,6 +46,11 @@ fun Chapter.copyFromSChapter(sChapter: SChapter): Chapter {
         chapterNumber = sChapter.chapter_number.toDouble(),
         scanlator = sChapter.scanlator?.ifBlank { null }?.trim(),
         coverUrl = sChapter.thumbnail_url,
+        genre = genres,
+        tags = tags,
+        moods = moods,
+        language = language,
+        description = description,
     )
 }
 
@@ -33,6 +59,10 @@ fun Chapter.toDbChapter(): DbChapter = ChapterImpl().also {
     it.manga_id = mangaId
     it.url = url
     it.name = name
+    it.description = description
+    it.genre = genre.orEmpty().joinToString()
+    it.tags = tags.orEmpty().joinToString()
+    it.moods = moods.orEmpty().joinToString()
     it.scanlator = scanlator
     it.read = read
     it.bookmark = bookmark

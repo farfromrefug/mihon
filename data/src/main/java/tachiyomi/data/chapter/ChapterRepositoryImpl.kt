@@ -2,9 +2,12 @@ package tachiyomi.data.chapter
 
 import kotlinx.coroutines.flow.Flow
 import logcat.LogPriority
+import org.intellij.lang.annotations.Language
 import tachiyomi.core.common.util.lang.toLong
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.DatabaseHandler
+import tachiyomi.data.StringListColumnAdapter
+import tachiyomi.data.StringListColumnAdapter.encode
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.model.ChapterUpdate
 import tachiyomi.domain.chapter.repository.ChapterRepository
@@ -32,6 +35,11 @@ class ChapterRepositoryImpl(
                         chapter.version,
                         chapter.coverUrl,
                         chapter.totalPages,
+                        chapter.genre,
+                        chapter.tags,
+                        chapter.moods,
+                        chapter.language,
+                        chapter.description,
                     )
                     val lastInsertId = chaptersQueries.selectLastInsertedRowId().executeAsOne()
                     chapter.copy(id = lastInsertId)
@@ -71,6 +79,11 @@ class ChapterRepositoryImpl(
                     isSyncing = 0,
                     coverUrl = chapterUpdate.coverUrl,
                     totalPages = chapterUpdate.totalPages,
+                    genre = chapterUpdate.genre?.let(StringListColumnAdapter::encode),
+                    tags = chapterUpdate.tags?.let(StringListColumnAdapter::encode),
+                    moods = chapterUpdate.moods?.let(StringListColumnAdapter::encode),
+                    language = chapterUpdate.language,
+                    description = chapterUpdate.description,
                 )
             }
         }
@@ -150,6 +163,11 @@ class ChapterRepositoryImpl(
         isSyncing: Long,
         coverUrl: String?,
         totalPages: Long,
+        genre: List<String>?,
+        tags: List<String>?,
+        moods: List<String>?,
+        language: String?,
+        description: String?,
     ): Chapter = Chapter(
         id = id,
         mangaId = mangaId,
@@ -167,5 +185,10 @@ class ChapterRepositoryImpl(
         version = version,
         coverUrl = coverUrl,
         totalPages = totalPages,
+        genre = genre,
+        tags = tags,
+        moods = moods,
+        language = language,
+        description = description,
     )
 }

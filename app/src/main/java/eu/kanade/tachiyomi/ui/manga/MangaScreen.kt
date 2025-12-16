@@ -198,7 +198,6 @@ class MangaScreen(
             onAllChapterSelected = screenModel::toggleAllSelection,
             onInvertSelection = screenModel::invertSelection,
             showFab = showFabPlayButton
-
         )
 
         var showScanlatorsDialog by remember { mutableStateOf(false) }

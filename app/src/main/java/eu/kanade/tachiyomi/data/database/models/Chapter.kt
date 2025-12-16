@@ -25,6 +25,7 @@ interface Chapter : SChapter, Serializable {
     var last_modified: Long
 
     var version: Long
+
 }
 
 val Chapter.isRecognizedNumber: Boolean
@@ -48,6 +49,11 @@ fun Chapter.toDomainChapter(): DomainChapter? {
         lastModifiedAt = last_modified,
         version = version,
         coverUrl = thumbnail_url,
-        totalPages = 0, // Not available in database Chapter model
+        totalPages = 0,
+        description = description,
+        language = language,
+        genre = getGenres(),
+        tags = getTags(),
+        moods = getMoods(),
     )
 }

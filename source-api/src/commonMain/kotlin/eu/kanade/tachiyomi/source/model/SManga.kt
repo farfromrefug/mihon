@@ -18,6 +18,12 @@ interface SManga : Serializable {
 
     var genre: String?
 
+    var tags: String?
+
+    var moods: String?
+
+    var language: String?
+
     var status: Int
 
     var thumbnail_url: String?
@@ -30,6 +36,14 @@ interface SManga : Serializable {
         if (genre.isNullOrBlank()) return null
         return genre?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
     }
+    fun getTags(): List<String>? {
+        if (tags.isNullOrBlank()) return null
+        return tags?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
+    fun getMoods(): List<String>? {
+        if (moods.isNullOrBlank()) return null
+        return moods?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
 
     fun copy() = create().also {
         it.url = url
@@ -38,6 +52,9 @@ interface SManga : Serializable {
         it.author = author
         it.description = description
         it.genre = genre
+        it.tags = tags
+        it.moods = moods
+        it.language = language
         it.status = status
         it.thumbnail_url = thumbnail_url
         it.update_strategy = update_strategy

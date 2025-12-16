@@ -15,4 +15,14 @@ class SChapterImpl : SChapter {
     override var scanlator: String? = null
 
     override var thumbnail_url: String? = null
+
+    override var description: String? = null
+
+    override var genre: String? = null
+
+    override var tags: String? = null
+
+    override var moods: String? = null
+
+    override var language: String? = null
 }
