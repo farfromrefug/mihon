@@ -1,0 +1,12 @@
+<p><strong>OSS-Dict</strong> is an offline dictionary reader. It is fork of Aard 2 with new Material design and updated features</p>
+<p><strong>Features</strong></p>
+<ul>
+<li>LLocal reading of content</li>
+<li>A configurable reader with multiple viewers, reading directions and other settings</li>
+<li>Tracker support</li>
+<li>Categories to organize your library</li>
+<li>Light and dark themes</li>
+<li>Schedule updating your library for new chapters</li>
+<li>Create backups locally to read offline or to your desired cloud service</li>
+<li>Plugins support like Komga or Booklore</li>
+</ul>
