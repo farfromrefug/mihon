@@ -106,6 +106,7 @@ class ReaderViewModel @JvmOverloads constructor(
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val getChapterColorFilter: GetChapterColorFilter = Injekt.get(),
     private val setChapterColorFilter: SetChapterColorFilter = Injekt.get(),
+    private val removeHistory: tachiyomi.domain.history.interactor.RemoveHistory = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -571,6 +572,31 @@ class ReaderViewModel @JvmOverloads constructor(
                     totalPages = totalPages,
                 ),
             )
+
+            // Handle history removal based on threshold
+            handleHistoryRemoval(readerChapter, pageIndex)
+        }
+    }
+
+    /**
+     * Handles removing or restoring history based on the page threshold.
+     * - If on the last page and threshold > 0, removes from history
+     * - If going back below threshold, restores to history
+     */
+    private suspend fun handleHistoryRemoval(readerChapter: ReaderChapter, pageIndex: Int) {
+        val threshold = readerPreferences.removeFromHistoryThreshold().get()
+        if (threshold == 0) return
+
+        val pages = readerChapter.pages ?: return
+        val totalPages = pages.size
+        val chapterId = readerChapter.chapter.id ?: return
+
+        // Calculate pages from the end
+        val pagesFromEnd = totalPages - pageIndex - 1
+
+        // If we're at or past the threshold (counting from end), remove from history
+        if (pagesFromEnd < threshold) {
+            removeHistory.awaitByChapterId(chapterId)
         }
     }
 
@@ -623,7 +649,19 @@ class ReaderViewModel @JvmOverloads constructor(
         val totalPage = (readerChapter.pages?.size ?: 0).toLong()
         val currentPage = ((readerChapter.chapter.last_page_read + 1).toLong()).coerceIn(0, totalPage)
 
-        upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration, currentPage, totalPage))
+        // Check if we should restore history (if currently removed but now below threshold)
+        val threshold = readerPreferences.removeFromHistoryThreshold().get()
+        if (threshold > 0) {
+            val pagesFromEnd = totalPage - currentPage
+            // Only upsert history if we're below the threshold
+            if (pagesFromEnd >= threshold) {
+                upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration, currentPage, totalPage))
+            }
+        } else {
+            // If threshold is 0, always update history
+            upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration, currentPage, totalPage))
+        }
+        
         chapterReadStartTime = null
     }
 

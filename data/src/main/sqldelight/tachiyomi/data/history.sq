@@ -57,6 +57,11 @@ WHERE _id IN (
     WHERE M._id = :mangaId
 );
 
+resetHistoryByChapterId:
+UPDATE history
+SET last_read = 0
+WHERE chapter_id = :chapterId;
+
 removeAllHistory:
 DELETE FROM history;
 

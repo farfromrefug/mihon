@@ -49,6 +49,14 @@ class HistoryRepositoryImpl(
         }
     }
 
+    override suspend fun resetHistoryByChapterId(chapterId: Long) {
+        try {
+            handler.await { historyQueries.resetHistoryByChapterId(chapterId) }
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, throwable = e)
+        }
+    }
+
     override suspend fun deleteAllHistory(): Boolean {
         return try {
             handler.await { historyQueries.removeAllHistory() }
