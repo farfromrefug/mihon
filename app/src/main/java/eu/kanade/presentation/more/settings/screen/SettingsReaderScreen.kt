@@ -198,7 +198,7 @@ object SettingsReaderScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_remove_from_history_threshold),
                     subtitle = stringResource(MR.strings.pref_remove_from_history_threshold_summary),
                     valueString = if (removeFromHistoryThreshold == 0) {
-                        stringResource(MR.strings.label_default)
+                        stringResource(MR.strings.disabled)
                     } else {
                         pluralStringResource(MR.plurals.pref_pages, removeFromHistoryThreshold, removeFromHistoryThreshold)
                     },
