@@ -590,13 +590,26 @@ class ReaderViewModel @JvmOverloads constructor(
             val pages = readerChapter.pages ?: return
             val totalPages = pages.size
             val chapterId = readerChapter.chapter.id ?: return
+            val mangaId = readerChapter.chapter.manga_id ?: return
 
             // Calculate pages from the end
             val pagesFromEnd = totalPages - pageIndex - 1
 
             // If we're at or past the threshold (counting from end), remove from history
             if (pagesFromEnd <= threshold) {
-                removeHistory.await(readerChapter.chapter.manga_id!!)
+                // Remove from history
+                removeHistory.await(mangaId)
+                
+                // Reset chapter state: lastPageRead to 0 and read to false
+                val chapters = getChaptersByMangaId.await(mangaId, applyScanlatorFilter = false)
+                val chapterUpdates = chapters.map { chapter ->
+                    ChapterUpdate(
+                        id = chapter.id,
+                        lastPageRead = 0,
+                        read = false,
+                    )
+                }
+                updateChapter.awaitAll(chapterUpdates)
             }
         }
     }

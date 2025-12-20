@@ -59,6 +59,8 @@ class HistoryScreenModel(
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
     private val sourceManager: SourceManager = Injekt.get(),
     private val readerPreferences: eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences = Injekt.get(),
+    private val getChaptersByMangaId: tachiyomi.domain.chapter.interactor.GetChaptersByMangaId = Injekt.get(),
+    private val updateChapter: tachiyomi.domain.chapter.interactor.UpdateChapter = Injekt.get(),
 ) : StateScreenModel<HistoryScreenModel.State>(State()) {
 
     private val _events: Channel<Event> = Channel(Channel.UNLIMITED)
@@ -106,6 +108,9 @@ class HistoryScreenModel(
             // If preference is enabled and there's no next chapter, remove from history
             if (readerPreferences.removeReadChaptersFromHistory().get() && chapters.isEmpty()) {
                 removeHistory.await(mangaId)
+                
+                // Reset chapter state: lastPageRead to 0 and read to false
+                resetChapterStateForManga(mangaId)
             }
             
             sendNextChapterEvent(chapters)
@@ -120,13 +125,35 @@ class HistoryScreenModel(
     fun removeFromHistory(history: HistoryWithRelations) {
         screenModelScope.launchIO {
             removeHistory.await(history)
+            
+            // Reset chapter state when removing from history
+            if (readerPreferences.removeReadChaptersFromHistory().get()) {
+                resetChapterStateForManga(history.mangaId)
+            }
         }
     }
 
     fun removeAllFromHistory(mangaId: Long) {
         screenModelScope.launchIO {
             removeHistory.await(mangaId)
+            
+            // Reset chapter state when removing from history
+            if (readerPreferences.removeReadChaptersFromHistory().get()) {
+                resetChapterStateForManga(mangaId)
+            }
         }
+    }
+
+    private suspend fun resetChapterStateForManga(mangaId: Long) {
+        val chapters = getChaptersByMangaId.await(mangaId, applyScanlatorFilter = false)
+        val chapterUpdates = chapters.map { chapter ->
+            tachiyomi.domain.chapter.model.ChapterUpdate(
+                id = chapter.id,
+                lastPageRead = 0,
+                read = false,
+            )
+        }
+        updateChapter.awaitAll(chapterUpdates)
     }
 
     fun removeAllHistory() {
