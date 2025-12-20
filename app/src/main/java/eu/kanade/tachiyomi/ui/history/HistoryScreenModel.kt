@@ -137,6 +137,42 @@ class HistoryScreenModel(
         mutableState.update { it.copy(dialog = dialog) }
     }
 
+    fun toggleSelection(history: HistoryWithRelations) {
+        mutableState.update { state ->
+            val newSelection = state.selection.toMutableSet()
+            if (history.id in newSelection) {
+                newSelection.remove(history.id)
+            } else {
+                newSelection.add(history.id)
+            }
+            state.copy(selection = newSelection)
+        }
+    }
+
+    fun clearSelection() {
+        mutableState.update { it.copy(selection = emptySet()) }
+    }
+
+    fun selectAll() {
+        val allIds = state.value.list?.filterIsInstance<HistoryUiModel.Item>()
+            ?.map { it.item.id }?.toSet() ?: emptySet()
+        mutableState.update { it.copy(selection = allIds) }
+    }
+
+    fun removeSelectedFromHistory() {
+        val toRemove = state.value.list?.filterIsInstance<HistoryUiModel.Item>()
+            ?.filter { it.item.id in state.value.selection }
+            ?.map { it.item }
+            ?: return
+
+        screenModelScope.launchIO {
+            toRemove.forEach { history ->
+                removeHistory.await(history)
+            }
+            clearSelection()
+        }
+    }
+
     /**
      * Get user categories.
      *
@@ -242,6 +278,7 @@ class HistoryScreenModel(
         val searchQuery: String? = null,
         val list: List<HistoryUiModel>? = null,
         val dialog: Dialog? = null,
+        val selection: Set<Long> = emptySet(),
     )
 
     sealed interface Dialog {

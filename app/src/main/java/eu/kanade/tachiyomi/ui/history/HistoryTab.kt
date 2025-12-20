@@ -71,8 +71,13 @@ data object HistoryTab : Tab {
             onSearchQueryChange = screenModel::updateSearchQuery,
             onClickCover = { navigator.push(MangaScreen(it)) },
             onClickResume = screenModel::getNextChapterForManga,
-            onDialogChange = screenModel::setDialog,
             onClickFavorite = screenModel::addFavorite,
+            onClickDelete = { screenModel.setDialog(HistoryScreenModel.Dialog.Delete(it)) },
+            onToggleSelection = screenModel::toggleSelection,
+            onSelectAll = screenModel::selectAll,
+            onInvertSelection = screenModel::clearSelection,
+            onDeleteSelected = screenModel::removeSelectedFromHistory,
+            onDialogChange = screenModel::setDialog,
         )
 
         val onDismissRequest = { screenModel.setDialog(null) }
