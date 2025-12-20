@@ -2,16 +2,17 @@ package eu.kanade.presentation.history.components
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import eu.kanade.presentation.history.HistoryUiModel
-import tachiyomi.presentation.core.components.LazyVerticalGrid
 
 @Composable
 internal fun HistoryComfortableGrid(
     items: List<HistoryUiModel.Item>,
-    columns: Int,
+    columns: GridCells,
     contentPadding: PaddingValues,
     selection: Set<Long>,
     onClick: (HistoryUiModel.Item) -> Unit,

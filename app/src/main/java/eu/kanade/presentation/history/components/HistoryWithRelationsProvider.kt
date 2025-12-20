@@ -24,6 +24,7 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         ),
         currentPage = 2,
         totalPage = 32,
+        chapterName = "Test Chapter",
     )
 
     private val historyWithoutReadAt = HistoryWithRelations(
@@ -43,6 +44,7 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         ),
         currentPage = 2,
         totalPage = 32,
+        chapterName = "Test Chapter",
     )
 
     private val historyWithNegativeChapterNumber = HistoryWithRelations(
@@ -62,6 +64,7 @@ internal class HistoryWithRelationsProvider : PreviewParameterProvider<HistoryWi
         ),
         currentPage = 2,
         totalPage = 32,
+        chapterName = "Test Chapter",
     )
 
     override val values: Sequence<HistoryWithRelations>

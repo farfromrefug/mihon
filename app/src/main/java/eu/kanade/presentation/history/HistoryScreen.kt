@@ -2,9 +2,9 @@ package eu.kanade.presentation.history
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.FlipToBack
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import eu.kanade.core.preference.asState
+import androidx.compose.ui.unit.dp
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
@@ -44,9 +45,12 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.LocalDate
+
+private val ADAPTIVE_GRID_CELL_SIZE = 128.dp
 
 @Composable
 fun HistoryScreen(
@@ -64,7 +68,7 @@ fun HistoryScreen(
     onDialogChange: (HistoryScreenModel.Dialog?) -> Unit,
 ) {
     val uiPreferences: UiPreferences = Injekt.get()
-    val displayMode by uiPreferences.historyDisplayMode().asState()
+    val displayMode by uiPreferences.historyDisplayMode().collectAsState()
 
     Scaffold(
         topBar = { scrollBehavior ->
@@ -79,8 +83,8 @@ fun HistoryScreen(
                 )
             } else {
                 HistorySelectionToolbar(
-                    selectionCount = state.selection.size,
-                    onClickClearSelection = onInvertSelection,
+                    selectedCount = state.selection.size,
+                    onClickUnselectAll = onInvertSelection,
                     onClickSelectAll = onSelectAll,
                     onClickInvertSelection = onInvertSelection,
                     onClickDelete = onDeleteSelected,
@@ -175,16 +179,17 @@ private fun HistoryRegularToolbar(
 
 @Composable
 private fun HistorySelectionToolbar(
-    selectionCount: Int,
-    onClickClearSelection: () -> Unit,
+    selectedCount: Int,
     onClickSelectAll: () -> Unit,
+    onClickUnselectAll: () -> Unit,
     onClickInvertSelection: () -> Unit,
     onClickDelete: () -> Unit,
 ) {
     AppBar(
-        titleContent = { androidx.compose.material3.Text(text = "$selectionCount") },
+        titleContent = { Text(text = "$selectedCount") },
         navigationIcon = Icons.Outlined.Close,
-        onNavigationIconClick = onClickClearSelection,
+        isActionMode = true,
+        onCancelActionMode = onClickUnselectAll,
         actions = {
             AppBarActions(
                 persistentListOf(
@@ -198,7 +203,7 @@ private fun HistorySelectionToolbar(
                         icon = Icons.Outlined.FlipToBack,
                         onClick = onClickInvertSelection,
                     ),
-                    AppBar.OverflowAction(
+                    AppBar.Action(
                         title = stringResource(MR.strings.action_delete),
                         icon = Icons.Outlined.Delete,
                         onClick = onClickDelete,
@@ -222,7 +227,7 @@ private fun HistoryScreenContent(
     onToggleSelection: (HistoryWithRelations) -> Unit,
 ) {
     val items = history.filterIsInstance<HistoryUiModel.Item>()
-    
+
     when (displayMode) {
         HistoryDisplayMode.List -> {
             FastScrollLazyColumn(
@@ -271,10 +276,10 @@ private fun HistoryScreenContent(
         HistoryDisplayMode.CompactGrid -> {
             val configuration = LocalConfiguration.current
             val columns = if (configuration.screenWidthDp < 600) 3 else 5
-            
+
             HistoryCompactGrid(
                 items = items,
-                columns = columns,
+                columns = GridCells.Adaptive(ADAPTIVE_GRID_CELL_SIZE),
                 contentPadding = contentPadding,
                 selection = selection,
                 onClick = { item ->
@@ -290,10 +295,10 @@ private fun HistoryScreenContent(
         HistoryDisplayMode.ComfortableGrid -> {
             val configuration = LocalConfiguration.current
             val columns = if (configuration.screenWidthDp < 600) 3 else 5
-            
+
             HistoryComfortableGrid(
                 items = items,
-                columns = columns,
+                columns = GridCells.Adaptive(ADAPTIVE_GRID_CELL_SIZE),
                 contentPadding = contentPadding,
                 selection = selection,
                 onClick = { item ->

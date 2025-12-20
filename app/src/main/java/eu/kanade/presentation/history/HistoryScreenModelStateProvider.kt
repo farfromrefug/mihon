@@ -106,6 +106,7 @@ class HistoryScreenModelStateProvider : PreviewParameterProvider<HistoryScreenMo
                             ),
                         currentPage = 0,
                         totalPage = Random.nextLong(),
+                        chapterName = "Test Chapter",
                     ),
                 ),
             )
