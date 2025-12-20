@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.isDynamicColorAvailable
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
+import tachiyomi.domain.history.model.HistoryDisplayMode
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -54,6 +55,13 @@ class UiPreferences(
     fun widgetRows() = preferenceStore.getInt("pref_widget_rows", 1)
     fun widgetPadding() = preferenceStore.getFloat("pref_widget_padding", 10F)
     fun widgetCenter() = preferenceStore.getBoolean("pref_widget_center", false)
+
+    fun historyDisplayMode() = preferenceStore.getObject(
+        "pref_history_display_mode",
+        HistoryDisplayMode.default,
+        HistoryDisplayMode.Serializer::serialize,
+        HistoryDisplayMode.Serializer::deserialize,
+    )
 
     companion object {
         fun dateFormat(format: String): DateTimeFormatter = when (format) {
