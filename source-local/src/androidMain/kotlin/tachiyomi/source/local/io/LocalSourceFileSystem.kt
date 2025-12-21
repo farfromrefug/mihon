@@ -39,6 +39,8 @@ actual class LocalSourceFileSystem(
     /**
      * Get the relative path of a file from the manga directory.
      * Returns the path with '/' separators, or null if the file is not within the manga directory.
+     * This method validates that the file is actually within the manga directory to prevent
+     * directory traversal attacks.
      */
     actual fun getRelativePath(mangaName: String, file: UniFile): String? {
         val mangaDir = getMangaDirectory(mangaName) ?: return null
@@ -48,13 +50,24 @@ actual class LocalSourceFileSystem(
         val filePath = file.filePath
         
         if (mangaDirPath != null && filePath != null) {
-            // Use file paths if available (more reliable)
-            if (!filePath.startsWith(mangaDirPath)) {
+            // Normalize paths to absolute canonical paths to prevent directory traversal
+            val mangaDirCanonical = java.io.File(mangaDirPath).canonicalPath
+            val fileCanonical = java.io.File(filePath).canonicalPath
+            
+            // Verify the file is actually within the manga directory
+            if (!fileCanonical.startsWith(mangaDirCanonical)) {
                 return null
             }
-            val relativePath = filePath.substring(mangaDirPath.length)
+            
+            val relativePath = fileCanonical.substring(mangaDirCanonical.length)
                 .trimStart('/', '\\') // Handle both Unix and Windows separators
                 .replace('\\', '/') // Normalize to forward slashes
+            
+            // Additional security check: reject paths with traversal sequences
+            if (relativePath.contains("..")) {
+                return null
+            }
+            
             return if (relativePath.isNotEmpty()) relativePath else null
         }
         
@@ -69,6 +82,12 @@ actual class LocalSourceFileSystem(
         // Extract the relative path after the manga directory
         val relativePath = fileUri.substring(mangaUri.length)
             .trimStart('/') // URIs use forward slashes
+        
+        // Security check: reject paths with traversal sequences
+        if (relativePath.contains("..")) {
+            return null
+        }
+        
         return if (relativePath.isNotEmpty()) relativePath else null
     }
 
