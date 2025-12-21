@@ -44,6 +44,7 @@ import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.PaginatedChapterListSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getChapterListFlow
+import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.editCover
@@ -648,7 +649,7 @@ class MangaScreenModel(
             withIOContext {
                 val newChapters = if (state.source is PaginatedChapterListSource) {
                     // Use paginated loading for sources that support it
-                    val allChapters = mutableListOf<eu.kanade.tachiyomi.source.model.SChapter>()
+                    val allChapters = mutableListOf<SChapter>()
                     var latestNewChapters = emptyList<Chapter>()
                     
                     state.source.getChapterListFlow(state.manga.toSManga())
@@ -656,7 +657,10 @@ class MangaScreenModel(
                             allChapters.addAll(chaptersPage.chapters)
                             
                             // Incrementally sync chapters as pages are loaded
-                            // This provides progressive feedback to the user
+                            // This provides progressive feedback to the user, updating the UI
+                            // as chapters become available rather than waiting for all pages.
+                            // Note: This processes the full accumulated list each time, which
+                            // ensures proper ordering and deduplication across pages.
                             latestNewChapters = syncChaptersWithSource.await(
                                 allChapters,
                                 state.manga,
