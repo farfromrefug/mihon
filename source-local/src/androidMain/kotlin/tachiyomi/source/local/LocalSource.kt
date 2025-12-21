@@ -374,7 +374,15 @@ actual class LocalSource(
     private fun processChapterFile(manga: SManga, mangaDir: UniFile?, chapterFile: UniFile): SChapter? {
         return try {
             SChapter.create().apply {
-                url = "${manga.url}/${chapterFile.name}"
+                // Use relative path for files in subdirectories
+                val relativePath = fileSystem.getRelativePath(manga.url, chapterFile)
+                url = if (relativePath != null) {
+                    "${manga.url}/$relativePath"
+                } else {
+                    // Fallback to just the filename if we can't determine relative path
+                    "${manga.url}/${chapterFile.name}"
+                }
+                
                 name = if (chapterFile.isDirectory) {
                     chapterFile.name
                 } else {
@@ -516,12 +524,19 @@ actual class LocalSource(
 
     fun getFormat(chapter: SChapter): Format {
         try {
-            val (mangaDirName, chapterName) = chapter.url.split('/', limit = 2)
-            return fileSystem.getBaseDirectory()
-                ?.findFile(mangaDirName)
-                ?.findFile(chapterName)
-                ?.let(Format.Companion::valueOf)
+            val urlParts = chapter.url.split('/', limit = 2)
+            if (urlParts.size != 2) {
+                throw Exception(context.stringResource(MR.strings.chapter_not_found))
+            }
+            
+            val mangaDirName = urlParts[0]
+            val chapterPath = urlParts[1]
+            
+            // Use the new method that can handle subdirectories
+            val chapterFile = fileSystem.findFileByRelativePath(mangaDirName, chapterPath)
                 ?: throw Exception(context.stringResource(MR.strings.chapter_not_found))
+            
+            return Format.valueOf(chapterFile)
         } catch (e: Format.UnknownFormatException) {
             throw Exception(context.stringResource(MR.strings.local_invalid_format))
         } catch (e: Exception) {
