@@ -41,10 +41,9 @@ import eu.kanade.tachiyomi.data.library.LocalMangaImportJob
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.network.HttpException
-import eu.kanade.tachiyomi.source.PaginatedChapterListSource
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.getChapterListFlow
 import eu.kanade.tachiyomi.source.model.SChapter
+import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.editCover
@@ -647,31 +646,37 @@ class MangaScreenModel(
         val state = successState ?: return
         try {
             withIOContext {
-                val newChapters = if (state.source is PaginatedChapterListSource) {
-                    // Use paginated loading for sources that support it
+                val newChapters = if (state.source is HttpSource && state.source.supportsChapterListPagination()) {
+                    // Use paginated loading for HttpSources that support it
                     val allChapters = mutableListOf<SChapter>()
                     var latestNewChapters = emptyList<Chapter>()
+                    var page = 1
+                    var hasNextPage: Boolean
                     
-                    state.source.getChapterListFlow(state.manga.toSManga())
-                        .collect { chaptersPage ->
-                            allChapters.addAll(chaptersPage.chapters)
-                            
-                            // Incrementally sync chapters as pages are loaded
-                            // This provides progressive feedback to the user, updating the UI
-                            // as chapters become available rather than waiting for all pages.
-                            // Note: This processes the full accumulated list each time, which
-                            // ensures proper ordering and deduplication across pages.
-                            latestNewChapters = syncChaptersWithSource.await(
-                                allChapters,
-                                state.manga,
-                                state.source,
-                                manualFetch,
-                            )
-                            
-                            logcat(LogPriority.DEBUG) {
-                                "Loaded ${allChapters.size} chapters so far, hasNextPage=${chaptersPage.hasNextPage}"
-                            }
+                    do {
+                        val chaptersPage = state.source.getChapterListPage(state.manga.toSManga(), page)
+                        allChapters.addAll(chaptersPage.chapters)
+                        
+                        // Incrementally sync chapters as pages are loaded
+                        // This provides progressive feedback to the user, updating the UI
+                        // as chapters become available rather than waiting for all pages.
+                        // Note: This processes the full accumulated list each time, which
+                        // ensures proper ordering and deduplication across pages.
+                        latestNewChapters = syncChaptersWithSource.await(
+                            allChapters,
+                            state.manga,
+                            state.source,
+                            manualFetch,
+                        )
+                        
+                        hasNextPage = chaptersPage.hasNextPage
+                        page++
+                        
+                        logcat(LogPriority.DEBUG) {
+                            "Loaded ${allChapters.size} chapters so far (page $page), hasNextPage=$hasNextPage"
                         }
+                    } while (hasNextPage)
+                    
                     latestNewChapters
                 } else {
                     // Use standard loading for sources without pagination

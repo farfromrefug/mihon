@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.network.asObservableSuccess
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.model.ChaptersPage
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -247,6 +248,7 @@ abstract class HttpSource : CatalogueSource {
 
     /**
      * Get all the available chapters for a manga.
+     * For paginated sources, this loads all pages automatically.
      * Normally it's not needed to override this method.
      *
      * @param manga the manga to update.
@@ -254,7 +256,45 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return fetchChapterList(manga).awaitSingle()
+        if (!supportsChapterListPagination()) {
+            return fetchChapterList(manga).awaitSingle()
+        }
+
+        // For paginated sources, load all pages
+        val allChapters = mutableListOf<SChapter>()
+        var page = 1
+        var hasNextPage: Boolean
+
+        do {
+            val chaptersPage = getChapterListPage(manga, page)
+            allChapters.addAll(chaptersPage.chapters)
+            hasNextPage = chaptersPage.hasNextPage
+            page++
+
+            if (page > MAX_CHAPTER_PAGES) {
+                throw IllegalStateException(
+                    "Exceeded maximum page limit ($MAX_CHAPTER_PAGES) while fetching chapters. " +
+                    "This may indicate a bug in the source implementation."
+                )
+            }
+        } while (hasNextPage)
+
+        return allChapters
+    }
+
+    /**
+     * Get a single page of chapters for a manga.
+     * This is useful for implementing infinite scroll in the UI.
+     *
+     * @param manga the manga to get chapters for
+     * @param page the page number (1-indexed)
+     * @return a ChaptersPage containing the chapters and pagination info
+     */
+    suspend fun getChapterListPage(manga: SManga, page: Int): ChaptersPage {
+        val response = client.newCall(chapterListRequest(manga, page)).awaitSuccess()
+        val hasNextPageList = mutableListOf(false)
+        val chapters = chapterListParse(response, hasNextPageList)
+        return ChaptersPage(chapters, hasNextPageList.firstOrNull() ?: false)
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getChapterList"))
@@ -267,17 +307,49 @@ abstract class HttpSource : CatalogueSource {
     }
 
     /**
+     * Returns whether the source uses pagination for chapter lists.
+     * When true, [chapterListRequest] and [chapterListParse] will be called with a page parameter.
+     * 
+     * Override this and return true to enable pagination support.
+     * 
+     * @return true if chapter list uses pagination, false otherwise
+     */
+    protected open fun supportsChapterListPagination(): Boolean = false
+
+    /**
      * Returns the request for updating the chapter list. Override only if it's needed to override
      * the url, send different headers or request method like POST.
      *
+     * When [supportsChapterListPagination] returns true, the page parameter will be provided
+     * for paginated sources (1-indexed). For non-paginated sources, page will be 1.
+     *
      * @param manga the manga to look for chapters.
+     * @param page the page number to retrieve (1-indexed), only used when pagination is enabled.
      */
-    protected open fun chapterListRequest(manga: SManga): Request {
+    protected open fun chapterListRequest(manga: SManga, page: Int = 1): Request {
         return GET(baseUrl + manga.url, headers)
     }
 
     /**
      * Parses the response from the site and returns a list of chapters.
+     *
+     * When [supportsChapterListPagination] returns true, return only the chapters for the requested page.
+     * The hasNextPage parameter should indicate if there are more pages to load.
+     *
+     * @param response the response from the site.
+     * @param hasNextPage output parameter to indicate if there are more pages (only used with pagination).
+     * @return the list of chapters for this page.
+     */
+    protected open fun chapterListParse(response: Response, hasNextPage: MutableList<Boolean>? = null): List<SChapter> {
+        // For backward compatibility, call the abstract method without hasNextPage
+        return chapterListParse(response)
+    }
+
+    /**
+     * Parses the response from the site and returns a list of chapters.
+     * 
+     * For non-paginated sources, this should return all chapters.
+     * For paginated sources, override [chapterListParse] with hasNextPage parameter instead.
      *
      * @param response the response from the site.
      */
@@ -289,6 +361,14 @@ abstract class HttpSource : CatalogueSource {
      * @param response the response from the site.
      */
     protected abstract fun chapterPageParse(response: Response): SChapter
+
+    companion object {
+        /**
+         * Maximum number of pages to fetch to prevent infinite loops in paginated sources.
+         */
+        const val MAX_CHAPTER_PAGES = 1000
+    }
+
 
     /**
      * Get the list of pages a chapter has. Pages should be returned
