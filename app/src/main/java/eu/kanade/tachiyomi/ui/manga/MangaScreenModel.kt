@@ -649,8 +649,8 @@ class MangaScreenModel(
                 val newChapters = if (state.source is HttpSource && state.source.supportsChapterListPagination()) {
                     // Use paginated loading for HttpSources that support it
                     // Load only the first page initially for infinite scroll
-                    val chaptersPage = state.source.getChapterListPage(state.manga.toSManga(), 1)
-                    
+                    val chaptersPage = state.source.getChapterListPage(state.manga.toSManga(), 0)
+
                     // Sync the first page of chapters
                     val latestNewChapters = syncChaptersWithSource.await(
                         chaptersPage.chapters,
@@ -658,23 +658,23 @@ class MangaScreenModel(
                         state.source,
                         manualFetch,
                     )
-                    
+
                     // Update state with pagination info
-                    updateSuccessState { 
+                    updateSuccessState {
                         it.copy(
                             chapterPaginationState = ChapterPaginationState(
-                                currentPage = 1,
+                                currentPage = 0,
                                 hasNextPage = chaptersPage.hasNextPage,
                                 isLoadingNextPage = false,
                                 loadedChapters = chaptersPage.chapters,
                             )
                         )
                     }
-                    
+
                     logcat(LogPriority.DEBUG) {
                         "Loaded ${chaptersPage.chapters.size} chapters (page 1), hasNextPage=${chaptersPage.hasNextPage}"
                     }
-                    
+
                     latestNewChapters
                 } else {
                     // Use standard loading for sources without pagination
@@ -706,7 +706,7 @@ class MangaScreenModel(
             updateSuccessState { it.copy(manga = newManga, isRefreshingData = false) }
         }
     }
-    
+
     /**
      * Load the next page of chapters (for infinite scroll).
      * Called when user scrolls near the bottom of the chapter list.
@@ -714,32 +714,32 @@ class MangaScreenModel(
     fun loadNextChapterPage() {
         val state = successState ?: return
         val paginationState = state.chapterPaginationState ?: return
-        
+
         // Don't load if already loading or no more pages
         if (paginationState.isLoadingNextPage || !paginationState.hasNextPage) {
             return
         }
-        
+
         // Only works with HttpSource pagination
         if (state.source !is HttpSource || !state.source.supportsChapterListPagination()) {
             return
         }
-        
+
         screenModelScope.launchIO {
             try {
                 // Mark as loading
-                updateSuccessState { 
+                updateSuccessState {
                     it.copy(
                         chapterPaginationState = paginationState.copy(isLoadingNextPage = true)
                     )
                 }
-                
+
                 val nextPage = paginationState.currentPage + 1
                 val chaptersPage = state.source.getChapterListPage(state.manga.toSManga(), nextPage)
-                
+
                 // Combine with previously loaded chapters
                 val allLoadedChapters = paginationState.loadedChapters + chaptersPage.chapters
-                
+
                 // Sync all chapters (including the new page)
                 syncChaptersWithSource.await(
                     allLoadedChapters,
@@ -747,9 +747,9 @@ class MangaScreenModel(
                     state.source,
                     false,
                 )
-                
+
                 // Update pagination state
-                updateSuccessState { 
+                updateSuccessState {
                     it.copy(
                         chapterPaginationState = ChapterPaginationState(
                             currentPage = nextPage,
@@ -759,15 +759,15 @@ class MangaScreenModel(
                         )
                     )
                 }
-                
+
                 logcat(LogPriority.DEBUG) {
                     "Loaded page $nextPage with ${chaptersPage.chapters.size} chapters, hasNextPage=${chaptersPage.hasNextPage}"
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Error loading next chapter page" }
-                
+
                 // Reset loading state on error
-                updateSuccessState { 
+                updateSuccessState {
                     it.copy(
                         chapterPaginationState = paginationState.copy(isLoadingNextPage = false)
                     )
