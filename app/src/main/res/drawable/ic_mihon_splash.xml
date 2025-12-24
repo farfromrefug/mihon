@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:tint="@color/accent_blue">
     <item
         android:width="72dp"
         android:height="72dp"
         android:drawable="@drawable/ic_mihon"
-        android:gravity="center" />
+        android:gravity="center" >
+
+    </item>
 </layer-list>
