@@ -75,8 +75,13 @@ class AppModule(val app: Application) : InjektModule {
                         cursor.close()
                     }
                     private fun recreateViews(db: SupportSQLiteDatabase) {
-                        // Recreate views to ensure they match the current schema
-                        // This prevents crashes when columns are added to views
+                        // Recreate views to ensure they match the current schema.
+                        // This prevents crashes when columns are added to views but old databases
+                        // still have the old view definitions. SQLDelight doesn't automatically
+                        // recreate views during schema upgrades, so we must do it manually.
+                        //
+                        // IMPORTANT: These view definitions must be kept in sync with the
+                        // corresponding .sq files in data/src/main/sqldelight/tachiyomi/view/
                         db.execSQL("DROP VIEW IF EXISTS historyView")
                         db.execSQL("DROP VIEW IF EXISTS libraryView")
                         db.execSQL("DROP VIEW IF EXISTS updatesView")
