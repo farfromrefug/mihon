@@ -4,6 +4,7 @@ import eu.kanade.domain.manga.model.hasCustomCover
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.model.SManga
+import tachiyomi.domain.history.repository.HistoryRepository
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.FetchInterval
 import tachiyomi.domain.manga.model.Manga
@@ -18,14 +19,33 @@ import java.time.ZonedDateTime
 class UpdateManga(
     private val mangaRepository: MangaRepository,
     private val fetchInterval: FetchInterval,
+    private val historyRepository: HistoryRepository,
 ) {
 
     suspend fun await(mangaUpdate: MangaUpdate): Boolean {
-        return mangaRepository.update(mangaUpdate)
+        val result = mangaRepository.update(mangaUpdate)
+        
+        // When removing from library, also remove history
+        if (result && mangaUpdate.favorite == false) {
+            historyRepository.resetHistoryByMangaId(mangaUpdate.id)
+        }
+        
+        return result
     }
 
     suspend fun awaitAll(mangaUpdates: List<MangaUpdate>): Boolean {
-        return mangaRepository.updateAll(mangaUpdates)
+        val result = mangaRepository.updateAll(mangaUpdates)
+        
+        // When removing from library, also remove history
+        if (result) {
+            mangaUpdates
+                .filter { it.favorite == false }
+                .forEach { update ->
+                    historyRepository.resetHistoryByMangaId(update.id)
+                }
+        }
+        
+        return result
     }
 
     suspend fun awaitUpdateFromSource(
@@ -115,8 +135,15 @@ class UpdateManga(
             true -> Instant.now().toEpochMilli()
             false -> 0
         }
-        return mangaRepository.update(
+        val result = mangaRepository.update(
             MangaUpdate(id = mangaId, favorite = favorite, dateAdded = dateAdded),
         )
+        
+        // When removing from library, also remove history
+        if (result && favorite == false) {
+            historyRepository.resetHistoryByMangaId(mangaId)
+        }
+        
+        return result
     }
 }
