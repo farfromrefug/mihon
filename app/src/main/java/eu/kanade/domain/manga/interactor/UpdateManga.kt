@@ -23,11 +23,29 @@ class UpdateManga(
 ) {
 
     suspend fun await(mangaUpdate: MangaUpdate): Boolean {
-        return mangaRepository.update(mangaUpdate)
+        val result = mangaRepository.update(mangaUpdate)
+        
+        // When removing from library, also remove history
+        if (result && mangaUpdate.favorite == false) {
+            historyRepository.resetHistoryByMangaId(mangaUpdate.id)
+        }
+        
+        return result
     }
 
     suspend fun awaitAll(mangaUpdates: List<MangaUpdate>): Boolean {
-        return mangaRepository.updateAll(mangaUpdates)
+        val result = mangaRepository.updateAll(mangaUpdates)
+        
+        // When removing from library, also remove history
+        if (result) {
+            mangaUpdates
+                .filter { it.favorite == false }
+                .forEach { update ->
+                    historyRepository.resetHistoryByMangaId(update.id)
+                }
+        }
+        
+        return result
     }
 
     suspend fun awaitUpdateFromSource(
