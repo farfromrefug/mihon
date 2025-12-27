@@ -812,6 +812,8 @@
     <string name="manga_interval_expected_update_soon">Soon</string>
     <string name="manga_interval_custom_amount">Custom update frequency:</string>
     <string name="chapter_downloading_progress">Downloading (%1$d/%2$d)</string>
+    <string name="chapter_downloading_progress_mb">Downloading (%.2f MB / %.2f MB)</string>
+    <string name="chapter_downloading_progress_mb_unknown">Downloading (%.2f MB)</string>
     <string name="chapter_error">Error</string>
     <string name="chapter_paused">Paused</string>
     <string name="show_title">Source title</string>

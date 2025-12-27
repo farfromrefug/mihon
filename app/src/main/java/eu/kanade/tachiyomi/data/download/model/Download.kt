@@ -25,6 +25,9 @@ data class Download(
 ) {
     var pages: List<Page>? = null
 
+    var totalBytes: Long = 0L
+    var downloadedBytes: Long = 0L
+
     val totalProgress: Int
         get() = pages?.sumOf(Page::progress) ?: 0
 
