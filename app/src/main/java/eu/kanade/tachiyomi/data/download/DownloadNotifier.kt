@@ -94,7 +94,7 @@ internal class DownloadNotifier(private val context: Context) {
             val downloadingProgressText = if (download.totalBytes > 0) {
                 val downloadedMB = download.downloadedBytes / (1024.0 * 1024.0)
                 val totalMB = download.totalBytes / (1024.0 * 1024.0)
-                "%.2f MB / %.2f MB".format(downloadedMB, totalMB)
+                context.stringResource(MR.strings.chapter_downloading_progress_mb, downloadedMB, totalMB)
             } else if (download.pages != null) {
                 context.stringResource(
                     MR.strings.chapter_downloading_progress,
@@ -121,7 +121,14 @@ internal class DownloadNotifier(private val context: Context) {
 
             // Set progress based on download type
             if (download.totalBytes > 0) {
-                setProgress(download.totalBytes.toInt(), download.downloadedBytes.toInt(), false)
+                // For large files, scale down to avoid Int overflow (max ~2GB)
+                // Use percentage-based progress instead
+                val progressPercent = if (download.totalBytes > 0) {
+                    ((download.downloadedBytes * 100) / download.totalBytes).toInt()
+                } else {
+                    0
+                }
+                setProgress(100, progressPercent, false)
             } else if (download.pages != null) {
                 setProgress(download.pages!!.size, download.downloadedImages, false)
             } else {

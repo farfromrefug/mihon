@@ -601,7 +601,7 @@ class Downloader(
             var lastNotificationTime = 0L
             body.source().use { source ->
                 tmpFile.openOutputStream().use { outputStream ->
-                    val buffer = ByteArray(8192)
+                    val buffer = ByteArray(65536) // 64KB buffer for better performance
                     var totalRead = 0L
                     var read: Int
 
